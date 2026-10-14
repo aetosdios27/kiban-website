@@ -14,3 +14,7 @@ next-env.d.ts
 Thumbs.db
 *.log
 .vercel/
+
+# Internal working files, kept locally and not published.
+docs/
+visuals/

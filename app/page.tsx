@@ -1,113 +1,85 @@
-import Link from "next/link";
-import { EnginePlaceholder } from "@/components/kiban/engine-placeholder";
-import { Panel } from "@/components/ui/panel";
+import { AfterWriteDiagram } from "@/components/kiban/after-write-diagram";
+import { WriteDiagram } from "@/components/kiban/write-diagram";
+import { CorrectnessStats } from "@/components/kiban/correctness-stats";
+import { ArchitectureDiagram } from "@/components/kiban/architecture-diagram";
+import { SectionHead } from "@/components/kiban/section-head";
+import { HeroInstall } from "@/components/kiban/hero-install";
+import { LsmAscii } from "@/components/kiban/lsm-ascii";
+import { ArrowDown } from "pixelarticons/react";
 
 export default function Home() {
   return (
-    <main id="main-content" className="container landing">
+    <main id="main-content">
       <section className="hero" aria-labelledby="hero-title">
-        <p className="eyebrow">
-          <span className="accent-rule" aria-hidden="true" /> An embedded
-          storage engine
-        </p>
-        <h1 id="hero-title">
-          Small engine.
-          <br />
-          <span>Deep internals.</span>
-        </h1>
-        <p className="hero-description">
-          Kiban is an embedded LSM-tree key-value storage engine built from
-          scratch.
-        </p>
-        <p className="hero-detail">
-          Storage infrastructure that lives inside your application. This is a
-          place to understand how it works, from the first write to recovery.
-        </p>
-        <div className="hero-actions">
-          <Link className="button button-primary" href="/explorer">
-            Open Explorer <span aria-hidden="true">↗</span>
-          </Link>
-          <Link className="text-link" href="#architecture">
-            About the architecture <span aria-hidden="true">→</span>
-          </Link>
+        <div className="hero-copy">
+          <p className="chip">
+            <span className="chip-mark" aria-hidden="true" /> kiban · 基盤 · n.
+            foundation
+          </p>
+          <h1 id="hero-title">
+            a storage engine, built from <span className="px">scratch</span>.
+          </h1>
+          <p className="hero-statement">
+            kiban is an embedded LSM-tree key-value store written in Rust: a
+            write-ahead log, ordered memtables, sorted tables, compaction,
+            snapshots, and crash recovery.
+          </p>
+          <HeroInstall />
+          <a className="mono-link" href="#write-path">
+            follow a write
+            <ArrowDown className="icon icon-drop" aria-hidden="true" />
+          </a>
         </div>
-        <div className="hero-caption mono">
-          <span>Embedded</span>
-          <span>Key-value</span>
-          <span>LSM-tree</span>
+        <div className="hero-art">
+          <LsmAscii />
         </div>
       </section>
-
+      <CorrectnessStats />
       <section
-        className="visualization-section"
-        aria-labelledby="internals-title"
+        id="write-path"
+        className="section"
+        aria-labelledby="write-title"
       >
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow mono">01 / Inside the engine</p>
-            <h2 id="internals-title">Follow the life of a write.</h2>
-          </div>
-          <span className="status-label mono">
-            Visualization in development
-          </span>
-        </div>
-        <Panel
-          id="engine-overview"
-          title="Engine overview"
-          annotation="PREVIEW / STRUCTURE ONLY"
+        <SectionHead
+          index="02"
+          label="Write path"
+          id="write-title"
+          title={
+            <>
+              follow a <span className="px">write</span>.
+            </>
+          }
         >
-          <EnginePlaceholder />
-          <div className="overview-footer">
-            <p>
-              A future view of writes, flushes, compactions, snapshots, and
-              recovery.
-            </p>
-            <Link href="/explorer" className="text-link">
-              View the shell <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-        </Panel>
-      </section>
-
-      <section className="resources" aria-labelledby="resources-title">
-        <h2 className="eyebrow mono" id="resources-title">
-          02 / Project resources
-        </h2>
-        <div className="resource-row" id="architecture">
-          <h3>Architecture</h3>
-          <p>
-            Engine internals and design decisions.
-            <br />
-            <span>Documentation links will be added here.</span>
-          </p>
-          <span className="status-label mono">Planned</span>
-        </div>
-        <div className="resource-row" id="benchmarks">
-          <h3>Benchmarks</h3>
-          <p>
-            Real measurements, with reproducible workloads.
-            <br />
-            <span>No benchmark results published yet.</span>
-          </p>
-          <span className="status-label mono">Not published</span>
-        </div>
-        <div className="resource-row" id="source">
-          <h3>
-            <a
-              className="resource-link"
-              href="https://github.com/aetosdios27/kiban"
-            >
-              Source on GitHub <span aria-hidden="true">↗</span>
-            </a>
-          </h3>
-          <p>
-            The Kiban engine lives in a separate repository.
-            <br />
-            <span className="mono">aetosdios27/kiban</span>
-          </p>
-          <span className="status-label mono">Engine repository</span>
+          From the log to memory to sorted files. The same key, with a different
+          physical home.
+        </SectionHead>
+        <div className="section-body">
+          <WriteDiagram />
         </div>
       </section>
+      <section
+        id="after-write"
+        className="section"
+        aria-labelledby="after-title"
+      >
+        <SectionHead
+          index="03"
+          label="After put()"
+          id="after-title"
+          title={
+            <>
+              what happens after <span className="px">put()</span>?
+            </>
+          }
+        >
+          Once a write is safe, the engine keeps tidying up behind it: merging,
+          committing, reclaiming, and recovering when things go wrong.
+        </SectionHead>
+        <div className="section-body">
+          <AfterWriteDiagram />
+        </div>
+      </section>
+      <ArchitectureDiagram />
     </main>
   );
 }

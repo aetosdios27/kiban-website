@@ -1,35 +1,44 @@
 import type { Metadata } from "next";
+import localFont from "next/font/local";
+import { GeistPixelSquare } from "geist/font/pixel";
 import { SiteHeader } from "@/components/layout/site-header";
+import { SiteFooter } from "@/components/layout/site-footer";
 import "./globals.css";
 
+const interTight = localFont({
+  src: "../public/fonts/inter-tight-latin.woff2",
+  variable: "--font-inter-tight",
+  weight: "100 900",
+  display: "swap",
+});
+const jetbrainsMono = localFont({
+  src: "../public/fonts/jetbrains-mono-latin.woff2",
+  variable: "--font-jetbrains-mono",
+  weight: "400 500",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  icons: { icon: "/icon.svg" },
-  title: {
-    default: "Kiban — Embedded storage, from scratch",
-    template: "%s · Kiban",
-  },
+  title: "kiban — An embedded LSM-tree storage engine in Rust",
   description:
-    "Kiban is an embedded LSM-tree key-value storage engine built from scratch. Explore the foundations of its storage internals.",
+    "An embedded LSM-tree key-value storage engine written in Rust, built from scratch. Understand its write path, durability contract, snapshots, and crash recovery.",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={`${interTight.variable} ${jetbrainsMono.variable} ${GeistPixelSquare.variable}`}
+    >
       <body>
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
         <SiteHeader />
         {children}
-        <footer className="site-footer container">
-          <span>
-            Kiban <span className="footer-separator">/</span> Embedded storage,
-            from scratch.
-          </span>
-          <span className="mono">Website foundation · 0.1</span>
-        </footer>
+        <SiteFooter />
       </body>
     </html>
   );
