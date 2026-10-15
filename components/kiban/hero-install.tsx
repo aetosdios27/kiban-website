@@ -41,8 +41,8 @@ export function HeroInstall() {
     );
 
   return (
-    <div id="installation" className="hero-install">
-      <div className="flex max-w-[520px] items-center justify-between gap-4">
+    <div id="installation" className="hero-install install">
+      <div className="install-head">
         <ToggleGroup.Root
           type="single"
           value={method}
@@ -52,13 +52,13 @@ export function HeroInstall() {
             setCopied(false);
           }}
           aria-label="Install method"
-          className="install-toggle"
+          className="install-tabs"
         >
           {(Object.keys(methods) as Method[]).map((id) => (
             <ToggleGroup.Item
               key={id}
               value={id}
-              className="install-toggle-item"
+              className="install-tab"
               data-cuelume-select
             >
               {id}
@@ -80,6 +80,7 @@ export function HeroInstall() {
           type="button"
           className="install-copy"
           onClick={copy}
+          data-copied={copied || undefined}
           aria-label={copied ? "Copied" : `Copy the ${method} command`}
         >
           {copied ? (

@@ -1,7 +1,6 @@
 "use client";
 
 import { bind, setEnabled, unlock } from "cuelume";
-import { Volume2, VolumeX } from "pixelarticons/react";
 import { useEffect, useSyncExternalStore } from "react";
 import { SOUND_KEY, cue, soundPreferred } from "@/lib/kiban/sound";
 
@@ -41,11 +40,9 @@ export function SoundToggle() {
       aria-label="Interface sounds"
       title={on ? "sound on" : "sound off"}
     >
-      {on ? (
-        <Volume2 className="icon" aria-hidden="true" />
-      ) : (
-        <VolumeX className="icon" aria-hidden="true" />
-      )}
+      {[0, 1, 2, 3].map((i) => (
+        <span key={i} className="sound-bar" aria-hidden="true" />
+      ))}
     </button>
   );
 }

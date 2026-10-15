@@ -327,9 +327,12 @@ a:hover > .icon-drop {
   min-height: 38px;
   padding-inline: var(--s-2);
 }
+/* Sound: four bars that dance while sound is on and lie flat when off. */
 .sound-toggle {
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
   width: 38px;
   height: 38px;
   min-height: 0;
@@ -341,12 +344,49 @@ a:hover > .icon-drop {
     color 160ms ease,
     border-color 160ms ease;
 }
-.sound-toggle:hover {
+.sound-toggle:hover:enabled {
   color: var(--foreground);
   border-color: var(--foreground);
+  background: transparent;
 }
 .sound-toggle[aria-pressed="true"] {
   color: var(--primary);
+}
+.sound-bar {
+  width: 2px;
+  height: 14px;
+  background: currentColor;
+  transform: scaleY(0.15);
+  transition: transform 300ms ease;
+}
+.sound-toggle[aria-pressed="true"] .sound-bar {
+  animation: sound-bar 1.1s ease-in-out infinite alternate;
+}
+.sound-bar:nth-child(2) {
+  animation-delay: -0.4s !important;
+}
+.sound-bar:nth-child(3) {
+  animation-delay: -0.8s !important;
+}
+.sound-bar:nth-child(4) {
+  animation-delay: -0.2s !important;
+}
+@keyframes sound-bar {
+  0% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+  100% {
+    transform: scaleY(0.45);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sound-toggle[aria-pressed="true"] .sound-bar {
+    animation: none;
+    transform: scaleY(0.7);
+  }
 }
 .site-footer {
   margin-top: var(--section-pad);
@@ -401,131 +441,18 @@ a:hover > .icon-drop {
 .footer-legal a:hover {
   color: var(--primary);
 }
-/* Blueprint: the engine as a building section, hairlines on the dark. */
-.bp {
-  display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
-  border: 1px solid var(--border-strong);
-  background: var(--card);
+/* The closing scene: ASCII noise with the wordmark carved out and a
+   tracking overlay (footer-field.tsx). Full-bleed. */
+.footer-field {
+  position: relative;
+  height: clamp(280px, 42vw, 640px);
+  background: var(--background);
 }
-.bp-svg {
-  display: block;
+.footer-field canvas {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
-  padding: var(--s-3);
-}
-.bp-line {
-  fill: none;
-  stroke: var(--muted-foreground);
-  stroke-width: 1;
-}
-.bp-seam,
-.bp-dim {
-  stroke: var(--border-strong);
-}
-.bp-pile {
-  fill: url(#bp-hatch);
-}
-.bp-hatch {
-  stroke: var(--border-strong);
-  stroke-width: 1;
-}
-.bp-hot {
-  stroke: var(--primary);
-}
-.bp-text {
-  font: 11px var(--font-mono);
-  fill: var(--muted-foreground);
-}
-.bp-slab {
-  fill: var(--foreground);
-}
-.bp-hot-text {
-  fill: var(--primary);
-}
-.bp[data-state="armed"] .bp-line {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-}
-.bp[data-state="in"] .bp-line {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 1.3s cubic-bezier(0.2, 0.7, 0.2, 1)
-    calc(var(--i, 0) * 110ms);
-}
-.bp[data-state="armed"] .bp-text {
-  opacity: 0;
-}
-.bp[data-state="in"] .bp-text {
-  opacity: 1;
-  transition: opacity 600ms ease 700ms;
-}
-.bp-spec {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  border-left: 1px solid var(--border-strong);
-  font: var(--text-label) var(--font-mono);
-}
-.bp-spec-head,
-.bp-spec-row {
-  display: grid;
-  gap: var(--s-2);
-  padding: 14px var(--s-3);
-  border-bottom: 1px solid var(--border);
-}
-.bp-spec-head {
-  display: flex;
-  justify-content: space-between;
-  color: var(--primary);
-}
-.bp-spec-row {
-  grid-template-columns: 84px minmax(0, 1fr);
-}
-.bp-spec dt {
-  color: var(--muted-foreground);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.bp-spec dd {
-  margin: 0;
-  color: var(--foreground);
-}
-/* The wordmark: an outline, so it reads as part of the drawing. */
-.footer-mark {
-  display: flex;
-  justify-content: center;
-  margin-top: var(--s-6);
-  font-family: var(--font-sans);
-  font-size: clamp(96px, 39vw, 640px);
-  font-weight: 800;
-  letter-spacing: -0.06em;
-  line-height: 1.02;
-  user-select: none;
-}
-.footer-mark span {
-  color: var(--secondary);
-  transition: color 200ms ease;
-}
-.footer-mark span:hover {
-  color: var(--primary);
-}
-@media (max-width: 900px) {
-  .bp {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .bp-spec {
-    border-left: 0;
-    border-top: 1px solid var(--border-strong);
-  }
-}
-@media (max-width: 700px) {
-  .bp-svg {
-    padding: var(--s-2);
-  }
-  .bp-text {
-    font-size: 20px;
-  }
+  height: 100%;
 }
 .footer-legal {
   position: relative;
@@ -639,26 +566,49 @@ button.button-primary:hover:enabled {
 .hero-install {
   margin-top: var(--s-6);
 }
-.install-toggle {
-  border: 1px solid var(--border);
-  padding: 2px;
+/* One card: tabs and the pin on top, the command and copy below. */
+.install {
+  max-width: 560px;
+  border: 1px solid var(--border-strong);
+  background: var(--card);
 }
-.install-toggle-item {
+.install-head {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+}
+.install-tabs {
+  display: flex;
+}
+.install-tab {
+  position: relative;
   min-height: 0;
-  height: 28px;
-  padding-inline: 12px;
+  height: 40px;
+  padding: 0 var(--s-2);
+  border: 0;
+  background: transparent;
   font: var(--text-label) var(--font-mono);
   color: var(--muted-foreground);
+  transition: color 160ms ease;
 }
-.install-toggle-item:hover {
+.install-tab:hover:enabled {
+  color: var(--foreground);
+  background: transparent;
+}
+.install-tab[data-state="on"] {
   color: var(--foreground);
 }
-/* Instant switch: no sliding highlight. */
-.install-toggle-item[data-state="on"] {
-  background: var(--accent);
-  color: var(--primary);
+.install-tab[data-state="on"]::after {
+  content: "";
+  position: absolute;
+  inset: auto var(--s-2) -1px;
+  height: 1px;
+  background: var(--primary);
 }
 .install-pin {
+  margin-left: auto;
+  align-self: center;
+  padding-right: var(--s-2);
   font: var(--text-label) var(--font-mono);
   color: var(--muted-foreground);
 }
@@ -668,33 +618,35 @@ button.button-primary:hover:enabled {
 }
 .install-bar {
   display: flex;
-  max-width: 560px;
-  margin-top: 12px;
-  border: 1px solid var(--border-strong);
-  background: var(--card);
+  align-items: stretch;
 }
 .install-bar code {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  padding: 14px var(--s-2);
+  padding: 16px var(--s-2);
   font-size: var(--text-label);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 .install-copy {
   display: grid;
+  flex: none;
   place-items: center;
-  width: 56px;
+  width: 52px;
   min-height: 0;
   padding: 0;
   border: 0;
-  border-left: 1px solid var(--border-strong);
+  border-left: 1px solid var(--border);
   background: transparent;
-  color: var(--foreground);
+  color: var(--muted-foreground);
   transition: color 160ms ease;
 }
 .install-copy:hover:enabled {
+  color: var(--foreground);
+  background: transparent;
+}
+.install-copy[data-copied] {
   color: var(--primary);
 }
 .hero .mono-link {
@@ -760,67 +712,6 @@ main {
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--foreground);
-}
-
-/* 01 Install */
-.panel.install-code {
-  max-width: 640px;
-  min-width: 0;
-  padding: 0;
-}
-.install-code-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--s-2);
-  padding-inline: var(--s-3);
-  border-bottom: 1px solid var(--border);
-}
-.install-code-header [role="tablist"] {
-  display: flex;
-  gap: var(--s-3);
-}
-.install-code-header button {
-  min-height: 0;
-  border: 0;
-  border-bottom: 1px solid transparent;
-  padding: var(--s-2) 0;
-  color: var(--muted-foreground);
-  transition:
-    color 160ms ease,
-    border-color 160ms ease;
-}
-.install-code-header button[aria-selected="true"],
-.install-code-header [role="tablist"] button:hover:enabled {
-  color: var(--foreground);
-  border-bottom-color: var(--primary);
-}
-.install-code-header > button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 36px;
-  border: 1px solid var(--border-strong);
-  margin-block: var(--s-1);
-  padding: 4px var(--s-2);
-}
-.install-code pre {
-  min-height: 160px;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  overflow-x: auto;
-  margin: 0;
-  padding: var(--s-3);
-  font: var(--text-ui) / 1.7 var(--font-mono);
-}
-.install-code code {
-  font-size: inherit;
-}
-.install-copy-status {
-  min-height: 40px;
-  padding: 0 var(--s-3) var(--s-2);
-  font: var(--text-label) var(--font-mono);
-  color: var(--muted-foreground);
 }
 
 /* 02 Correctness */
@@ -1515,11 +1406,11 @@ html[data-type="proposed"] {
   --font-mono: var(--font-departure-mono), monospace;
   --font-pixel: var(--font-departure-mono), monospace;
 }
-html[data-type="proposed"] :is(h1, h2, .footer-title, .footer-mark) {
+html[data-type="proposed"] :is(h1, h2, .footer-title) {
   font-stretch: 118%;
   letter-spacing: -0.035em;
 }
-html[data-type="proposed"] :is(code, pre, svg text, .bp-spec dd) {
+html[data-type="proposed"] :is(code, pre, svg text) {
   font-family: var(--font-commit-mono), monospace;
 }
 html[data-type="proposed"] .px {

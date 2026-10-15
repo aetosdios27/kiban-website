@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ExternalLink } from "pixelarticons/react";
 import { ENGINE_COMMIT } from "@/lib/kiban/source";
-import { Blueprint } from "./blueprint";
+import { FooterField } from "./footer-field";
 
 const REPO = "https://github.com/aetosdios27/kiban";
 
@@ -66,22 +66,13 @@ export function SiteFooter() {
         </nav>
       </div>
 
-      <div className="page-width">
-        <Blueprint />
-      </div>
-
-      {/* Outlined wordmark: each letter takes the accent while hovered. */}
-      <div className="footer-mark page-width" aria-hidden="true">
-        {"kiban".split("").map((c, i) => (
-          <span key={i}>{c}</span>
-        ))}
-      </div>
-
       <div className="footer-legal page-width">
         <span>© 2026 aetosdios27 · kiban is MIT licensed</span>
         <span>基盤 · n. foundation</span>
         <span>built from scratch.</span>
       </div>
+
+      <FooterField />
     </footer>
   );
 }
