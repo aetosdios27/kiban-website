@@ -35,7 +35,7 @@ export function ArchitectureDiagram() {
         id="architecture-title"
         title={
           <>
-            inside the <span className="px">engine</span>.
+            inside the <span className="px">engine.</span>
           </>
         }
       >

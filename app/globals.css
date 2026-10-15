@@ -327,12 +327,11 @@ a:hover > .icon-drop {
   min-height: 38px;
   padding-inline: var(--s-2);
 }
-/* Sound: four bars that dance while sound is on and lie flat when off. */
+/* Sound: the Pixelarticons speaker, centred in a square that matches the
+   header buttons. */
 .sound-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
+  display: grid;
+  place-items: center;
   width: 38px;
   height: 38px;
   min-height: 0;
@@ -352,41 +351,10 @@ a:hover > .icon-drop {
 .sound-toggle[aria-pressed="true"] {
   color: var(--primary);
 }
-.sound-bar {
-  width: 2px;
-  height: 14px;
-  background: currentColor;
-  transform: scaleY(0.15);
-  transition: transform 300ms ease;
-}
-.sound-toggle[aria-pressed="true"] .sound-bar {
-  animation: sound-bar 1.1s ease-in-out infinite alternate;
-}
-.sound-bar:nth-child(2) {
-  animation-delay: -0.4s !important;
-}
-.sound-bar:nth-child(3) {
-  animation-delay: -0.8s !important;
-}
-.sound-bar:nth-child(4) {
-  animation-delay: -0.2s !important;
-}
-@keyframes sound-bar {
-  0% {
-    transform: scaleY(0.25);
-  }
-  50% {
-    transform: scaleY(1);
-  }
-  100% {
-    transform: scaleY(0.45);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .sound-toggle[aria-pressed="true"] .sound-bar {
-    animation: none;
-    transform: scaleY(0.7);
-  }
+.sound-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
 }
 .site-footer {
   margin-top: var(--section-pad);
@@ -445,7 +413,7 @@ a:hover > .icon-drop {
    tracking overlay (footer-field.tsx). Full-bleed. */
 .footer-field {
   position: relative;
-  height: clamp(280px, 42vw, 640px);
+  height: clamp(460px, 48vw, 720px);
   background: var(--background);
 }
 .footer-field canvas {
@@ -453,6 +421,18 @@ a:hover > .icon-drop {
   inset: 0;
   width: 100%;
   height: 100%;
+}
+/* CCTV scanlines over the whole feed. */
+.footer-field::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 2px,
+    rgba(0, 0, 0, 0.22) 2px 3px
+  );
 }
 .footer-legal {
   position: relative;
@@ -563,8 +543,61 @@ button.button-primary:hover:enabled {
   line-height: 1.5;
   color: var(--muted-foreground);
 }
+/* Ask your AI: a row of assistant marks above the install card. */
+.ask-ai {
+  max-width: 560px;
+  margin-top: var(--s-6);
+}
+.ask-ai-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px var(--s-2);
+  margin-bottom: 12px;
+  font: var(--text-label) var(--font-mono);
+  color: var(--foreground);
+}
+.ask-ai-note {
+  color: var(--muted-foreground);
+}
+.ask-ai-list {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border-strong);
+  background: var(--card);
+}
+.ask-ai-list li + li {
+  border-left: 1px solid var(--border);
+}
+.ask-ai-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  color: var(--muted-foreground);
+  transition:
+    color 160ms ease,
+    background-color 160ms ease;
+}
+.ask-ai-item:hover,
+.ask-ai-item:focus-visible {
+  color: var(--primary);
+  background: var(--accent);
+}
+.ask-ai-item svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
 .hero-install {
   margin-top: var(--s-6);
+}
+.ask-ai + .hero-install {
+  margin-top: var(--s-3);
 }
 /* One card: tabs and the pin on top, the command and copy below. */
 .install {
@@ -630,9 +663,10 @@ button.button-primary:hover:enabled {
   text-overflow: ellipsis;
 }
 .install-copy {
-  display: grid;
+  display: flex;
   flex: none;
-  place-items: center;
+  align-items: center;
+  justify-content: center;
   width: 52px;
   min-height: 0;
   padding: 0;

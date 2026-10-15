@@ -3,6 +3,7 @@ import { WriteDiagram } from "@/components/kiban/write-diagram";
 import { CorrectnessStats } from "@/components/kiban/correctness-stats";
 import { ArchitectureDiagram } from "@/components/kiban/architecture-diagram";
 import { SectionHead } from "@/components/kiban/section-head";
+import { AskAi } from "@/components/kiban/ask-ai";
 import { HeroInstall } from "@/components/kiban/hero-install";
 import { LsmAscii } from "@/components/kiban/lsm-ascii";
 import { ArrowDown } from "pixelarticons/react";
@@ -17,13 +18,14 @@ export default function Home() {
             foundation
           </p>
           <h1 id="hero-title">
-            a storage engine, built from <span className="px">scratch</span>.
+            a storage engine, built from <span className="px">scratch.</span>
           </h1>
           <p className="hero-statement">
             kiban is an embedded LSM-tree key-value store written in Rust: a
             write-ahead log, ordered memtables, sorted tables, compaction,
             snapshots, and crash recovery.
           </p>
+          <AskAi />
           <HeroInstall />
           <a className="mono-link" href="#write-path">
             follow a write
@@ -46,7 +48,7 @@ export default function Home() {
           id="write-title"
           title={
             <>
-              follow a <span className="px">write</span>.
+              follow a <span className="px">write.</span>
             </>
           }
         >
@@ -68,7 +70,7 @@ export default function Home() {
           id="after-title"
           title={
             <>
-              what happens after <span className="px">put()</span>?
+              what happens after <span className="px">put()?</span>
             </>
           }
         >
