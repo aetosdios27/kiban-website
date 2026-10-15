@@ -13,6 +13,8 @@ type Box = { min: V; max: V; level: number; file: number; hot: number };
 
 const RAMP = " .,:;-=+*#%@";
 const LOOP = 9;
+// Cell size at a 500px canvas; larger canvases scale the cells up so the
+// grid keeps the same density and the glyphs stay legible.
 const CELL_W = 5; // CSS px per character
 const CELL_H = 8.5;
 const FONT = 8;
@@ -155,6 +157,9 @@ export function LsmAscii() {
     const base = files();
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     let size = 0;
+    let cellW = CELL_W;
+    let cellH = CELL_H;
+    let scale = 1;
     let frame = 0;
     let visible = true;
     const t0 = performance.now();
@@ -207,17 +212,17 @@ export function LsmAscii() {
       }
       // Leave room on the right for the level labels.
       fitK = Math.max(
-        (x1 - x0) / (cols * CELL_W * 0.78),
-        (y1 - y0) / (rows * CELL_H * 0.9),
+        (x1 - x0) / (cols * cellW * 0.84),
+        (y1 - y0) / (rows * cellH * 0.96),
       );
-      offX = (x0 + x1) / 2 + fitK * cols * CELL_W * 0.06;
+      offX = (x0 + x1) / 2 + fitK * cols * cellW * 0.06;
       offY = (y0 + y1) / 2;
     }
 
     function render(time: number) {
       const t = time % LOOP;
-      const cols = Math.floor(size / CELL_W);
-      const rows = Math.floor(size / CELL_H);
+      const cols = Math.floor(size / cellW);
+      const rows = Math.floor(size / cellH);
       const k = fitK; // world units per CSS px
       const az = Math.PI / 4 + SWAY * Math.sin((time / 26) * Math.PI * 2);
       const { d, r, u } = basis(az);
@@ -229,12 +234,12 @@ export function LsmAscii() {
       const boxes = scene(t, base);
 
       ctx!.clearRect(0, 0, size, size);
-      ctx!.font = `${FONT}px ${mono}`;
+      ctx!.font = `${FONT * scale}px ${mono}`;
       ctx!.textBaseline = "top";
       for (let row = 0; row < rows; row++) {
-        const sy = -(row + 0.5 - rows / 2) * CELL_H * k;
+        const sy = -(row + 0.5 - rows / 2) * cellH * k;
         for (let col = 0; col < cols; col++) {
-          const sx = (col + 0.5 - cols / 2) * CELL_W * k;
+          const sx = (col + 0.5 - cols / 2) * cellW * k;
           const o: V = [
             centre[0] + r[0] * sx + u[0] * sy - d[0] * 8,
             centre[1] + r[1] * sx + u[1] * sy - d[1] * 8,
@@ -249,8 +254,8 @@ export function LsmAscii() {
               bestBox = b;
             }
           }
-          const x = col * CELL_W;
-          const y = row * CELL_H;
+          const x = col * cellW;
+          const y = row * cellH;
           if (!best || !bestBox) {
             if (col % 4 === 0 && row % 2 === 0) {
               ctx!.fillStyle = dim;
@@ -296,19 +301,19 @@ export function LsmAscii() {
       }
 
       // Labels track each level's right-front corner as the camera sways.
-      ctx!.font = `11px ${mono}`;
+      ctx!.font = `${Math.round(11 * Math.min(scale, 1.2))}px ${mono}`;
       ctx!.textBaseline = "middle";
       levels.forEach((lv) => {
         const q: V = [lv.a, (lv.y[0] + lv.y[1]) / 2, -lv.a];
         const rel: V = [q[0] - centre[0], q[1] - centre[1], q[2] - centre[2]];
         const px =
           (rel[0] * r[0] + rel[1] * r[1] + rel[2] * r[2]) / k +
-          (Math.floor(size / CELL_W) * CELL_W) / 2;
+          (Math.floor(size / cellW) * cellW) / 2;
         const py =
           -(rel[0] * u[0] + rel[1] * u[1] + rel[2] * u[2]) / k +
-          (Math.floor(size / CELL_H) * CELL_H) / 2;
+          (Math.floor(size / cellH) * cellH) / 2;
         ctx!.fillStyle = label;
-        ctx!.fillText(`─ ${lv.name}`, Math.min(px + 10, size - 70), py);
+        ctx!.fillText(`─ ${lv.name}`, Math.min(px + 10, size - 80), py);
       });
     }
 
@@ -322,7 +327,10 @@ export function LsmAscii() {
       size = canvas!.clientWidth;
       canvas!.width = canvas!.height = Math.round(size * dpr);
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
-      fitShot(Math.floor(size / CELL_W), Math.floor(size / CELL_H));
+      scale = Math.min(1.5, Math.max(1, size / 500));
+      cellW = CELL_W * scale;
+      cellH = CELL_H * scale;
+      fitShot(Math.floor(size / cellW), Math.floor(size / cellH));
       if (reduced) render(FLUSH[0] - 0.2);
     }
 

@@ -6,19 +6,19 @@ import { ExternalLink } from "pixelarticons/react";
 const structures = [
   [
     "block cache",
-    "Caches verified SST blocks for foreground reads. Compaction uses a separate bulk reader.",
+    "Holds checksum-verified SST blocks for reads. Compaction streams through its own reader and leaves the cache alone.",
   ],
   [
     "MANIFEST",
-    "Commits live WAL generations and SST file / level membership before structural state is published.",
+    "Records which WAL and SST files are live, and at which level, before any reader sees the change.",
   ],
   [
     "compaction",
-    "Merges overlapping ranges. L1 and deeper levels maintain disjoint key ranges.",
+    "Merges overlapping files downward. From L1 on, files in a level never overlap in key range.",
   ],
   [
     "snapshots",
-    "Pin a sequence boundary and file set; visible versions and referenced files remain available.",
+    "Pin a sequence number and the files behind it. Later writes and compactions don't change what a snapshot reads.",
   ],
 ] as const;
 
@@ -39,8 +39,8 @@ export function ArchitectureDiagram() {
           </>
         }
       >
-        An ordered byte-key / byte-value store inside your process. The MANIFEST
-        is the authority for which WALs and SSTables belong to the database.
+        An ordered byte-key, byte-value store that runs inside your process. The
+        MANIFEST decides which log and table files belong to the database.
       </SectionHead>
       <figure className="section-body architecture-diagram">
         <div
@@ -52,9 +52,8 @@ export function ArchitectureDiagram() {
           <EngineStrata />
         </div>
         <figcaption>
-          Conceptual paths. <code>get()</code> and <code>scan()</code> read
-          memtables, then SSTables; the newest visible version wins. Keys,
-          versions and sequence numbers are illustrative.
+          <code>get()</code> and <code>scan()</code> read the memtables, then
+          the SSTs, newest first; the newest visible version wins.
         </figcaption>
       </figure>
       <dl className="architecture-details">
@@ -66,11 +65,8 @@ export function ArchitectureDiagram() {
         ))}
       </dl>
       <div className="section-foot">
-        <a
-          className="read-link"
-          href={`${ENGINE_SOURCE}/README.md#architecture`}
-        >
-          Read the engine architecture{" "}
+        <a className="read-link" href={`${ENGINE_SOURCE}/README.md`}>
+          Read the README{" "}
           <ExternalLink className="icon icon-ext" aria-hidden="true" />
         </a>
       </div>

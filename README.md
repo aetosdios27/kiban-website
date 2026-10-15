@@ -4,10 +4,10 @@ The website for [kiban](https://github.com/aetosdios27/kiban), an embedded LSM-t
 
 ## What's on the page
 
-- **Install:** `cargo` and source instructions, pinned to the reviewed engine commit.
-- **Correctness:** the counts reported for the project's recovery, fault-injection and concurrency runs. They are supplied results, not measurements this site reruns.
+- **Install:** `cargo` and source instructions, pinned to the engine's `v0.1.0` release tag.
+- **Correctness:** the counts reported for the project's recovery, fault-injection and concurrency runs. They come from the engine's `validation/CORRECTNESS.md` at `v0.1.0`; this site does not rerun them.
 - **Write path** and **what happens after `put()`:** two isometric explainers following one write, `pear = green`, through the WAL, memtable, SST, MANIFEST and compaction.
-- **Architecture:** how the pieces fit together, with links into the engine source at the pinned commit.
+- **Architecture:** how the pieces fit together, with links into the engine source at `v0.1.0`.
 
 Illustrative keys and sequence numbers in the diagrams describe stages of the design, not live engine state.
 
@@ -26,7 +26,7 @@ pnpm format:check
 
 ## Credits
 
-Fonts are bundled locally under the SIL Open Font License (Inter Tight, JetBrains Mono and Geist Pixel; licences in `public/fonts`). The candidate stack under `public/fonts/specimen` (Mona Sans, Departure Mono, Commit Mono) is previewed with `/?type=proposed`. Icons are [Pixelarticons](https://pixelarticons.com/), number animation is [Scritto](https://scrit.to/), and interface sounds are [Cuelume](https://cuelume-site.pages.dev/), which can be switched off from the header.
+Fonts are bundled locally under the SIL Open Font License: Mona Sans, Departure Mono and Commit Mono (licences in `public/fonts`; static TTF cuts for the share images in `assets/og`). Icons are [Pixelarticons](https://pixelarticons.com/), number animation is [Scritto](https://scrit.to/), and interface sounds are [Cuelume](https://cuelume-site.pages.dev/), which can be switched off from the header.
 
 ## Accessibility
 

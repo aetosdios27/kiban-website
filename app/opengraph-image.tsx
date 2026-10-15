@@ -64,7 +64,7 @@ export default async function Image() {
         backgroundImage: "radial-gradient(#262626 1.5px, transparent 1.5px)",
         backgroundSize: "28px 28px",
         color: BRAND.ink,
-        fontFamily: "Inter Tight",
+        fontFamily: "Mona Sans",
       }}
     >
       <div
@@ -122,8 +122,8 @@ export default async function Image() {
             <span style={{ marginRight: 24 }}>built from</span>
             <span
               style={{
-                fontFamily: "Geist Pixel",
-                fontWeight: 500,
+                fontFamily: "Departure Mono",
+                fontWeight: 400,
                 letterSpacing: -2,
                 color: BRAND.yellow,
               }}

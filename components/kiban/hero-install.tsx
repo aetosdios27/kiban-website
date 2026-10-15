@@ -4,18 +4,18 @@ import { Check, Copy } from "pixelarticons/react";
 import { ToggleGroup } from "radix-ui";
 import { useEffect, useState } from "react";
 import { cue } from "@/lib/kiban/sound";
-import { ENGINE_COMMIT } from "@/lib/kiban/source";
+import { ENGINE_TAG } from "@/lib/kiban/source";
 
-// The one place to install from. Both commands are pinned to the reviewed
-// commit; the bar shows a short form and copies the full command.
+// The one place to install from. Both commands are pinned to the release
+// tag; the bar shows a short form and copies the full command.
 const methods = {
   cargo: {
     shown: "cargo add kiban --git github.com/aetosdios27/kiban",
-    command: `cargo add kiban --git https://github.com/aetosdios27/kiban --rev ${ENGINE_COMMIT}`,
+    command: `cargo add kiban --git https://github.com/aetosdios27/kiban --tag ${ENGINE_TAG}`,
   },
   source: {
     shown: "git clone github.com/aetosdios27/kiban && cargo build",
-    command: `git clone https://github.com/aetosdios27/kiban.git\ncd kiban\ngit checkout ${ENGINE_COMMIT}\ncargo build --release --locked`,
+    command: `git clone --branch ${ENGINE_TAG} https://github.com/aetosdios27/kiban.git\ncd kiban\ncargo build --release --locked`,
   },
 } as const;
 type Method = keyof typeof methods;
@@ -65,9 +65,7 @@ export function HeroInstall() {
             </ToggleGroup.Item>
           ))}
         </ToggleGroup.Root>
-        <span className="install-pin">
-          pinned to {ENGINE_COMMIT.slice(0, 7)}
-        </span>
+        <span className="install-pin">{ENGINE_TAG} · early release</span>
       </div>
       <div className="install-bar">
         <code title={m.command}>

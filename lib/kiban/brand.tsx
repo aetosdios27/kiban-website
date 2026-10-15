@@ -58,21 +58,21 @@ export function IconTile({ size }: { size: number }) {
 // Read once at module scope; the files never change per request.
 export const ogFonts = (async () => {
   const dir = join(process.cwd(), "assets/og");
-  const [inter, pixel] = await Promise.all([
-    readFile(join(dir, "inter-tight-800.ttf")),
-    readFile(join(dir, "geist-pixel-square.ttf")),
+  const [sans, pixel] = await Promise.all([
+    readFile(join(dir, "mona-sans-800.ttf")),
+    readFile(join(dir, "departure-mono.ttf")),
   ]);
   return [
     {
-      name: "Inter Tight",
-      data: inter,
+      name: "Mona Sans",
+      data: sans,
       weight: 800 as const,
       style: "normal" as const,
     },
     {
-      name: "Geist Pixel",
+      name: "Departure Mono",
       data: pixel,
-      weight: 500 as const,
+      weight: 400 as const,
       style: "normal" as const,
     },
   ];

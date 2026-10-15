@@ -75,7 +75,6 @@ export function WriteDiagram() {
       title="Where one write goes"
       desc="Memory is drawn above disk. put(pear = green) is appended to the write-ahead log on disk and inserted into the memtable in memory. The full memtable freezes, is written to disk as a sorted SST, and the MANIFEST records the SST. Then the old log is deleted."
       viewBox="40 24 940 590"
-      note="Keys, file numbers and sequence numbers are illustrative."
       steps={writeSteps}
     >
       {(arrow) => (

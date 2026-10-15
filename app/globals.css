@@ -9,8 +9,9 @@
  * Design system
  * Palette: near-black (#0a0a0a) with lifted surfaces, white ink, one yellow
  *          (--primary) used as a highlighter, never as a fill.
- * Type:    heavy lowercase grotesk for headlines, one Geist Pixel word per
- *          headline (.px), JetBrains Mono for every piece of UI chrome.
+ * Type:    heavy lowercase Mona Sans, expanded, for headlines; one Departure
+ *          Mono word per headline (.px) and Departure Mono for every piece
+ *          of UI chrome; Commit Mono for code and diagram text.
  * Space:   8px base, --s-1 … --s-16.
  * Accent:  primary actions, the pixel word, the active diagram element, focus.
  * Layout:  every section is label → head (heading | intro) → body → foot.
@@ -45,7 +46,7 @@
   --chart-4: #5c4d00;
   --chart-5: #333333;
 
-  --text-display: clamp(52px, 7.4vw, 96px);
+  --text-display: clamp(48px, 6.2vw, 80px);
   --text-heading: clamp(44px, 6.2vw, 80px);
   --text-sub: 24px;
   --text-body: 16px;
@@ -64,10 +65,10 @@
   --measure-body: 52ch;
 }
 @theme inline {
-  --font-sans: var(--font-inter-tight), Arial, sans-serif;
-  --font-mono: var(--font-jetbrains-mono), monospace;
-  --font-pixel:
-    var(--font-geist-pixel-square), var(--font-jetbrains-mono), monospace;
+  --font-sans: var(--font-mona-sans), Arial, sans-serif;
+  --font-mono: var(--font-departure-mono), monospace;
+  --font-pixel: var(--font-departure-mono), monospace;
+  --font-code: var(--font-commit-mono), monospace;
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -599,6 +600,9 @@ button.button-primary:hover:enabled {
 .ask-ai + .hero-install {
   margin-top: var(--s-3);
 }
+.hero-install {
+  margin-top: var(--s-6);
+}
 /* One card: tabs and the pin on top, the command and copy below. */
 .install {
   max-width: 560px;
@@ -751,7 +755,7 @@ main {
 /* 02 Correctness */
 .correctness-results {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
   margin-bottom: 0;
   border: 1px solid var(--border);
@@ -764,9 +768,6 @@ main {
   gap: var(--s-2);
   padding: var(--s-3);
   background: var(--background);
-}
-.correctness-results > div:last-child {
-  grid-column: span 2;
 }
 .correctness-results dt {
   font: var(--text-label) var(--font-mono);
@@ -915,7 +916,7 @@ main {
   font: 500 22px var(--font-pixel);
 }
 .strata-manifest.is-hot .strata-version {
-  fill: var(--primary);
+  fill: var(--primary-foreground);
 }
 .strata-commit {
   fill: none;
@@ -1394,9 +1395,6 @@ main {
   .correctness-results {
     grid-template-columns: minmax(0, 1fr);
   }
-  .correctness-results > div:last-child {
-    grid-column: auto;
-  }
   .section-body {
     margin-top: var(--s-6);
   }
@@ -1432,45 +1430,16 @@ main {
   }
 }
 
-/* Type rethink, compared with /?type=proposed (type-switch.tsx).
-   Mona Sans, expanded, for headlines; Departure Mono for chrome and the
-   pixel word; Commit Mono for code and diagram text. */
-html[data-type="proposed"] {
-  --font-sans: var(--font-mona-sans), Arial, sans-serif;
-  --font-mono: var(--font-departure-mono), monospace;
-  --font-pixel: var(--font-departure-mono), monospace;
-}
-html[data-type="proposed"] :is(h1, h2, .footer-title) {
+/* Type details. Headlines run expanded; code and diagram text use the
+   code face. `html:root` lifts these above component rules such as
+   `.hero h1` and `.strata-pill text`. */
+html:root :is(h1, h2, .footer-title) {
   font-stretch: 118%;
   letter-spacing: -0.035em;
 }
-html[data-type="proposed"] :is(code, pre, svg text) {
-  font-family: var(--font-commit-mono), monospace;
+html:root :is(code, pre, svg text) {
+  font-family: var(--font-code);
 }
-html[data-type="proposed"] .px {
+html:root .px {
   letter-spacing: -0.04em;
-}
-.type-switch {
-  position: fixed;
-  bottom: var(--s-2);
-  left: 50%;
-  z-index: 20;
-  display: flex;
-  padding: 3px;
-  border: 1px solid var(--border-strong);
-  background: var(--card);
-  transform: translateX(-50%);
-}
-.type-switch button {
-  min-height: 0;
-  height: 32px;
-  padding-inline: 14px;
-  border: 0;
-  background: transparent;
-  font: var(--text-label) var(--font-mono);
-  color: var(--muted-foreground);
-}
-.type-switch button[aria-pressed="true"] {
-  background: var(--accent);
-  color: var(--primary);
 }

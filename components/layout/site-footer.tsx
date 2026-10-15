@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { ExternalLink } from "pixelarticons/react";
-import { ENGINE_COMMIT } from "@/lib/kiban/source";
+import { ENGINE_REPO, ENGINE_TAG } from "@/lib/kiban/source";
 import { FooterField } from "./footer-field";
-
-const REPO = "https://github.com/aetosdios27/kiban";
 
 const columns = [
   {
@@ -18,10 +16,14 @@ const columns = [
   {
     title: "source",
     links: [
-      ["github", REPO, true],
-      ["readme", `${REPO}#readme`, true],
-      ["reviewed commit", `${REPO}/tree/${ENGINE_COMMIT}`, true],
-      ["license", `${REPO}/blob/main/LICENSE`, true],
+      ["github", ENGINE_REPO, true],
+      ["readme", `${ENGINE_REPO}#readme`, true],
+      [
+        `${ENGINE_TAG} release`,
+        `${ENGINE_REPO}/releases/tag/${ENGINE_TAG}`,
+        true,
+      ],
+      ["license", `${ENGINE_REPO}/blob/main/LICENSE`, true],
     ],
   },
 ] as const;
@@ -35,7 +37,8 @@ export function SiteFooter() {
             now go <span className="px">read</span> the source.
           </p>
           <p className="footer-sub">
-            An embedded LSM-tree storage engine in Rust, built from scratch.
+            Rust, Linux, MIT. {ENGINE_TAG} is an early release: no API or
+            on-disk format stability before 1.0.
           </p>
         </div>
         <nav className="footer-columns" aria-label="Footer">
@@ -67,9 +70,8 @@ export function SiteFooter() {
       </div>
 
       <div className="footer-legal page-width">
-        <span>© 2026 aetosdios27 · kiban is MIT licensed</span>
+        <span>© 2026 aetosdios27</span>
         <span>基盤 · n. foundation</span>
-        <span>built from scratch.</span>
       </div>
 
       <FooterField />

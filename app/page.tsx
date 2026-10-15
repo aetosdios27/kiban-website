@@ -21,9 +21,9 @@ export default function Home() {
             a storage engine, built from <span className="px">scratch.</span>
           </h1>
           <p className="hero-statement">
-            kiban is an embedded LSM-tree key-value store written in Rust: a
-            write-ahead log, ordered memtables, sorted tables, compaction,
-            snapshots, and crash recovery.
+            kiban is an embedded LSM-tree key-value store for Linux, written in
+            Rust: a write-ahead log, memtables, SSTs, leveled compaction,
+            snapshots and crash recovery.
           </p>
           <AskAi />
           <HeroInstall />
@@ -52,8 +52,8 @@ export default function Home() {
             </>
           }
         >
-          From the log to memory to sorted files. The same key, with a different
-          physical home.
+          One <code>put()</code>, from the log to memory to a sorted file on
+          disk.
         </SectionHead>
         <div className="section-body">
           <WriteDiagram />
@@ -74,8 +74,8 @@ export default function Home() {
             </>
           }
         >
-          Once a write is safe, the engine keeps tidying up behind it: merging,
-          committing, reclaiming, and recovering when things go wrong.
+          The work that follows a write: compaction, snapshots, file cleanup,
+          and recovery after a crash.
         </SectionHead>
         <div className="section-body">
           <AfterWriteDiagram />

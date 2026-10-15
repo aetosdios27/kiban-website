@@ -255,7 +255,9 @@ export function EngineStrata() {
         role="img"
         aria-labelledby="engine-strata-title engine-strata-description"
       >
-        <title id="engine-strata-title">Kiban as layered ground</title>
+        <title id="engine-strata-title">
+          The kiban engine as stacked layers
+        </title>
         <desc id="engine-strata-description">
           An isometric cut-away whose layers are the LSM levels, with key order
           running left to right. Writes append to the WAL and land in sorted

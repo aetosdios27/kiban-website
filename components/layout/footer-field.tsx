@@ -145,9 +145,16 @@ export function FooterField() {
     gl.uniform1f(u("uCount"), CHARS.length);
     gl.uniform1f(u("uGain"), 1);
 
+    // Read live (the declaration updates with the stylesheet), so a font
+    // swap or a late stylesheet never leaves the overlay on a stale family.
     const css = getComputedStyle(el);
-    const mono = css.getPropertyValue("--font-mono") || "monospace";
-    const pixel = css.getPropertyValue("--font-pixel") || mono;
+    let mono = "monospace";
+    let pixel = mono;
+    const readFonts = () => {
+      mono = css.getPropertyValue("--font-mono").trim() || "monospace";
+      pixel = css.getPropertyValue("--font-pixel").trim() || mono;
+    };
+    readFonts();
 
     let w = 0;
     let h = 0;
@@ -571,6 +578,7 @@ export function FooterField() {
       if (tick !== lastTick) {
         lastTick = tick;
         const t = tick / FPS;
+        readFonts();
         step(t);
         drawHud(t);
       }
