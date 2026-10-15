@@ -138,7 +138,7 @@ function Pill({
   const w = children.length * 7.4 + 22;
   return (
     <g className={`strata-pill ${hot ? "strata-pill-hot" : ""}`}>
-      <rect x={x - w / 2} y={y - 11} width={w} height={22} rx={11} />
+      <rect x={x - w / 2} y={y - 11} width={w} height={22} rx={3} />
       <text x={x} y={y + 0.5} textAnchor="middle" dominantBaseline="middle">
         {children}
       </text>
@@ -248,159 +248,171 @@ export function EngineStrata() {
   const l1Top = P(W / 2, D / 2, L1[1]);
 
   return (
-    <svg
-      className="engine-strata"
-      viewBox="180 40 720 510"
-      role="img"
-      aria-labelledby="engine-strata-title engine-strata-description"
-    >
-      <title id="engine-strata-title">Kiban as layered ground</title>
-      <desc id="engine-strata-description">
-        An isometric cut-away whose layers are the LSM levels, with key order
-        running left to right. Writes append to the WAL and land in sorted
-        position on the memtable. The memtable freezes and flushes into L0 as a
-        sorted file; the MANIFEST commits it and the old WAL retires. Compaction
-        then merges L0 into L1 and re-cuts the non-overlapping L1 key ranges. L2
-        holds the oldest, largest files.
-      </desc>
+    <>
+      <svg
+        className="engine-strata"
+        viewBox="180 40 720 510"
+        role="img"
+        aria-labelledby="engine-strata-title engine-strata-description"
+      >
+        <title id="engine-strata-title">Kiban as layered ground</title>
+        <desc id="engine-strata-description">
+          An isometric cut-away whose layers are the LSM levels, with key order
+          running left to right. Writes append to the WAL and land in sorted
+          position on the memtable. The memtable freezes and flushes into L0 as
+          a sorted file; the MANIFEST commits it and the old WAL retires.
+          Compaction then merges L0 into L1 and re-cuts the non-overlapping L1
+          key ranges. L2 holds the oldest, largest files.
+        </desc>
 
-      {/* WAL: an append-only column of plates in front of the block. */}
-      <g className="strata-wal">
-        <Box x={[-60, -20]} y={[D + 40, D + 80]} z={[0, 8]} />
-        {Array.from({ length: walPlates }, (_, i) => (
-          <Box
-            key={i}
-            x={[-58, -22]}
-            y={[D + 42, D + 78]}
-            z={[11 + i * 9, 17 + i * 9]}
-            tone={i === landed - 1 && t < FREEZE ? "hot" : "rock"}
-            opacity={1 - retire}
-          />
-        ))}
-        <Pill
-          at={[P(-40, D + 60, 0)[0], P(-40, D + 60, 0)[1] + 34]}
-          hot={walPlates > 0 && t < FREEZE}
-        >
-          WAL
-        </Pill>
-        <text
-          className="strata-meta"
-          x={P(-40, D + 60, 0)[0]}
-          y={P(-40, D + 60, 0)[1] + 62}
-          textAnchor="middle"
-        >
-          seq {seq}
-        </text>
-      </g>
-
-      {/* MANIFEST: a ledger behind the block. */}
-      <g className={`strata-manifest ${manifestHot ? "is-hot" : ""}`}>
-        <Box
-          x={[W - 60, W]}
-          y={[-150, -90]}
-          z={[0, 24]}
-          tone={manifestHot ? "hot" : "rock"}
-        />
-        <Pill at={[manifestTop[0] + 6, manifestTop[1] - 40]} hot>
-          MANIFEST
-        </Pill>
-        <text
-          className="strata-version"
-          x={manifestTop[0] + 6}
-          y={manifestTop[1] - 4}
-          textAnchor="middle"
-        >
-          v{version}
-        </text>
-      </g>
-
-      {files(L2_FILES, L2, "rock")}
-      {t < COMPACT[0] && files(oldCuts, L1, "rock")}
-      {t >= COMPACT[0] &&
-        t < COMPACT[1] &&
-        files(oldCuts, L1, "hot", 1 - compact)}
-      {t >= COMPACT[0] && files(newCuts, L1, l1Hot ? "hot" : "rock", compact)}
-      {l0Exists && (
-        <Box
-          x={[lo, hi]}
-          z={[lerp(L0[0], L1[0] + 8, compact), lerp(L0[1], L1[1], compact)]}
-          tone={l0Hot ? "hot" : "rock"}
-          opacity={1 - compact}
-        />
-      )}
-
-      {t < FLUSH[1] && (
-        <>
-          <Box x={tray.x} z={tray.z} tone={t >= FREEZE ? "frozen" : "tray"} />
-          {inTray.map((x, i) => (
+        {/* WAL: an append-only column of plates in front of the block. */}
+        <g className="strata-wal">
+          <Box x={[-60, -20]} y={[D + 40, D + 80]} z={[0, 8]} />
+          {Array.from({ length: walPlates }, (_, i) => (
             <Box
               key={i}
-              x={[x - 7, x + 7]}
-              y={[D / 2 - 7, D / 2 + 7]}
-              z={[tray.z[1], tray.z[1] + 12]}
-              tone="cube"
-              opacity={1 - flush}
+              x={[-58, -22]}
+              y={[D + 42, D + 78]}
+              z={[11 + i * 9, 17 + i * 9]}
+              tone={i === landed - 1 && t < FREEZE ? "hot" : "rock"}
+              opacity={1 - retire}
             />
           ))}
-        </>
-      )}
-      {falling.map(({ name, x, p }) => {
-        const fall = Math.min(p, 1);
-        const z = lerp(TRAY + 6 + 80, TRAY + 6, fall * fall);
-        const [px, py] = P(x, D / 2, z + 40);
-        return (
-          <g key={name} opacity={p < 1 ? 1 : 1.6 - p > 0 ? (1.6 - p) / 0.6 : 0}>
-            {p < 1 && (
+          <Pill
+            at={[P(-40, D + 60, 0)[0], P(-40, D + 60, 0)[1] + 34]}
+            hot={walPlates > 0 && t < FREEZE}
+          >
+            WAL
+          </Pill>
+          <text
+            className="strata-meta"
+            x={P(-40, D + 60, 0)[0]}
+            y={P(-40, D + 60, 0)[1] + 62}
+            textAnchor="middle"
+          >
+            seq {seq}
+          </text>
+        </g>
+
+        {/* MANIFEST: a ledger behind the block. */}
+        <g className={`strata-manifest ${manifestHot ? "is-hot" : ""}`}>
+          <Box
+            x={[W - 60, W]}
+            y={[-150, -90]}
+            z={[0, 24]}
+            tone={manifestHot ? "hot" : "rock"}
+          />
+          <Pill at={[manifestTop[0] + 6, manifestTop[1] - 40]} hot>
+            MANIFEST
+          </Pill>
+          <text
+            className="strata-version"
+            x={manifestTop[0] + 6}
+            y={manifestTop[1] - 4}
+            textAnchor="middle"
+          >
+            v{version}
+          </text>
+        </g>
+
+        {files(L2_FILES, L2, "rock")}
+        {t < COMPACT[0] && files(oldCuts, L1, "rock")}
+        {t >= COMPACT[0] &&
+          t < COMPACT[1] &&
+          files(oldCuts, L1, "hot", 1 - compact)}
+        {t >= COMPACT[0] && files(newCuts, L1, l1Hot ? "hot" : "rock", compact)}
+        {l0Exists && (
+          <Box
+            x={[lo, hi]}
+            z={[lerp(L0[0], L1[0] + 8, compact), lerp(L0[1], L1[1], compact)]}
+            tone={l0Hot ? "hot" : "rock"}
+            opacity={1 - compact}
+          />
+        )}
+
+        {t < FLUSH[1] && (
+          <>
+            <Box x={tray.x} z={tray.z} tone={t >= FREEZE ? "frozen" : "tray"} />
+            {inTray.map((x, i) => (
               <Box
+                key={i}
                 x={[x - 7, x + 7]}
                 y={[D / 2 - 7, D / 2 + 7]}
-                z={[z, z + 12]}
+                z={[tray.z[1], tray.z[1] + 12]}
                 tone="cube"
+                opacity={1 - flush}
               />
-            )}
-            <Pill at={[px, py]} hot>{`put(${name})`}</Pill>
-          </g>
-        );
-      })}
+            ))}
+          </>
+        )}
+        {falling.map(({ name, x, p }) => {
+          const fall = Math.min(p, 1);
+          const z = lerp(TRAY + 6 + 80, TRAY + 6, fall * fall);
+          const [px, py] = P(x, D / 2, z + 40);
+          return (
+            <g
+              key={name}
+              opacity={p < 1 ? 1 : 1.6 - p > 0 ? (1.6 - p) / 0.6 : 0}
+            >
+              {p < 1 && (
+                <Box
+                  x={[x - 7, x + 7]}
+                  y={[D / 2 - 7, D / 2 + 7]}
+                  z={[z, z + 12]}
+                  tone="cube"
+                />
+              )}
+              <Pill at={[px, py]} hot>{`put(${name})`}</Pill>
+            </g>
+          );
+        })}
 
-      {manifestHot && (
-        <path
-          className="strata-commit"
-          d={`M${manifestTop[0]} ${manifestTop[1]} L${(t >= COMPACT[1] ? l1Top : l0Top).join(" ")}`}
-        />
-      )}
+        {manifestHot && (
+          <path
+            className="strata-commit"
+            d={`M${manifestTop[0]} ${manifestTop[1]} L${(t >= COMPACT[1] ? l1Top : l0Top).join(" ")}`}
+          />
+        )}
 
-      <FaceText x={8} z={L2[0] + 18}>
-        L2 · oldest, largest files
-      </FaceText>
-      <FaceText x={8} z={L1[0] + 13}>
-        L1 · disjoint key ranges
-      </FaceText>
-      {l0Exists && compact < 0.3 && (
-        <FaceText x={lo + 6} z={L0[0] + 7}>
-          L0
+        <FaceText x={8} z={L2[0] + 18}>
+          L2 · oldest, largest files
         </FaceText>
-      )}
-      {t < FLUSH[0] && (
-        <Pill at={[P(0, D, TRAY)[0] - 54, P(0, D, TRAY)[1]]} hot={t >= FREEZE}>
-          {t >= FREEZE ? "frozen" : "memtable"}
-        </Pill>
-      )}
+        <FaceText x={8} z={L1[0] + 13}>
+          L1 · disjoint key ranges
+        </FaceText>
+        {l0Exists && compact < 0.3 && (
+          <FaceText x={lo + 6} z={L0[0] + 7}>
+            L0
+          </FaceText>
+        )}
+        {t < FLUSH[0] && (
+          <Pill
+            at={[P(0, D, TRAY)[0] - 54, P(0, D, TRAY)[1]]}
+            hot={t >= FREEZE}
+          >
+            {t >= FREEZE ? "frozen" : "memtable"}
+          </Pill>
+        )}
 
-      <g className="strata-axis">
-        <path
-          d={`M${P(0, D + 18, 0).join(" ")} L${P(W, D + 18, 0).join(" ")}`}
-        />
-        <FaceAxisText at={P(0, D + 18, 0)}>a</FaceAxisText>
-        <FaceAxisText at={P(W / 2 - 34, D + 18, 0)}>key order</FaceAxisText>
-        <FaceAxisText at={P(W - 6, D + 18, 0)}>z</FaceAxisText>
-      </g>
+        <g className="strata-axis">
+          <path
+            d={`M${P(0, D + 18, 0).join(" ")} L${P(W, D + 18, 0).join(" ")}`}
+          />
+          <FaceAxisText at={P(0, D + 18, 0)}>a</FaceAxisText>
+          <FaceAxisText at={P(W / 2 - 34, D + 18, 0)}>key order</FaceAxisText>
+          <FaceAxisText at={P(W - 6, D + 18, 0)}>z</FaceAxisText>
+        </g>
 
-      <g className="strata-ticker" transform="translate(200 532)">
-        <rect width="8" height="8" y="-7" className="strata-ticker-dot" />
-        <text x="18">{narrate(t, version)}</text>
-      </g>
-    </svg>
+        <g className="strata-ticker" transform="translate(200 532)">
+          <rect width="8" height="8" y="-7" className="strata-ticker-dot" />
+          <text x="18">{narrate(t, version)}</text>
+        </g>
+      </svg>
+      {/* On phones the SVG ticker would be too small; the same line, as text. */}
+      <p className="strata-caption" aria-hidden="true">
+        {narrate(t, version)}
+      </p>
+    </>
   );
 }
 

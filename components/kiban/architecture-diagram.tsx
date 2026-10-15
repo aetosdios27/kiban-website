@@ -53,7 +53,8 @@ export function ArchitectureDiagram() {
         </div>
         <figcaption>
           Conceptual paths. <code>get()</code> and <code>scan()</code> read
-          memtables, then SSTables; the newest visible version wins.
+          memtables, then SSTables; the newest visible version wins. Keys,
+          versions and sequence numbers are illustrative.
         </figcaption>
       </figure>
       <dl className="architecture-details">

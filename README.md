@@ -13,7 +13,7 @@ Illustrative keys and sequence numbers in the diagrams describe stages of the de
 
 ## Development
 
-Next.js 16, React 19, strict TypeScript, Tailwind CSS 4, and pnpm. Node.js 20.9+ and pnpm 12.6.0. No environment variables or external services are needed.
+Next.js 16, React 19, strict TypeScript, Tailwind CSS 4, and pnpm. Node.js 20.9+ and pnpm 12.6.0. No external services are needed. Set `NEXT_PUBLIC_SITE_URL` to the live origin (for example `https://example.com`) so share images and the sitemap use absolute links; on Vercel the production URL is used if it is unset.
 
 ```bash
 pnpm install
@@ -26,7 +26,7 @@ pnpm format:check
 
 ## Credits
 
-Fonts are bundled locally (Inter Tight and JetBrains Mono under the SIL Open Font License; Geist Pixel from the `geist` package). Icons are [Pixelarticons](https://pixelarticons.com/). Number animation is [Scritto](https://scrit.to/), the footer wordmark is drawn with [ascii.rest](https://ascii.rest/), and the interface components are [shadcn/ui](https://ui.shadcn.com/) with [Animate UI](https://animate-ui.com/), vendored under `components/animate-ui`.
+Fonts are bundled locally under the SIL Open Font License (Inter Tight, JetBrains Mono and Geist Pixel; licences in `public/fonts`). The candidate stack under `public/fonts/specimen` (Mona Sans, Departure Mono, Commit Mono) is previewed with `/?type=proposed`. Icons are [Pixelarticons](https://pixelarticons.com/), number animation is [Scritto](https://scrit.to/), and interface sounds are [Cuelume](https://cuelume-site.pages.dev/), which can be switched off from the header.
 
 ## Accessibility
 

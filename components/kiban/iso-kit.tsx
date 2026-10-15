@@ -1,7 +1,13 @@
 "use client";
 
 import { Reload } from "pixelarticons/react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 
 // Shared parts for the isometric explainer diagrams: one projection, boxes,
 // plates, flat readable cards, numbered markers, and IsoFigure, which owns the
@@ -152,13 +158,57 @@ export const Step = ({
 
 export type IsoStep = { title: string; body: string };
 
+// Phones get a focus view instead of a shrunken drawing.
+const NARROW = "(max-width: 700px)";
+function useNarrow() {
+  return useSyncExternalStore(
+    (cb) => {
+      const m = matchMedia(NARROW);
+      m.addEventListener("change", cb);
+      return () => m.removeEventListener("change", cb);
+    },
+    () => matchMedia(NARROW).matches,
+    () => false,
+  );
+}
+
+type VB = [number, number, number, number];
+const parseVB = (v: string) => v.split(/\s+/).map(Number) as VB;
+
+// The box around everything that belongs to step n, padded and widened to at
+// least `min` so a lone marker never fills the screen.
+function stepBox(svg: SVGSVGElement, n: number, min: number): VB | null {
+  let x0 = Infinity,
+    y0 = Infinity,
+    x1 = -Infinity,
+    y1 = -Infinity;
+  svg.querySelectorAll<SVGGElement>(`[data-steps~="${n}"]`).forEach((g) => {
+    const b = g.getBBox();
+    if (!b.width && !b.height) return;
+    x0 = Math.min(x0, b.x);
+    y0 = Math.min(y0, b.y);
+    x1 = Math.max(x1, b.x + b.width);
+    y1 = Math.max(y1, b.y + b.height);
+  });
+  if (x0 === Infinity) return null;
+  const pad = 28;
+  let w = x1 - x0 + pad * 2;
+  let h = y1 - y0 + pad * 2;
+  const cx = (x0 + x1) / 2;
+  const cy = (y0 + y1) / 2;
+  // Match the focus box's square frame so nothing is letterboxed away.
+  w = Math.max(w, min, h);
+  h = w;
+  return [cx - w / 2, cy - h / 2, w, h];
+}
+
 export function IsoFigure({
   id,
   title,
   desc,
   viewBox,
   steps,
-  paths,
+  note,
   children,
 }: {
   id: string;
@@ -166,8 +216,8 @@ export function IsoFigure({
   desc: string;
   viewBox: string;
   steps: IsoStep[];
-  /** The path the tour token rides for each step; null holds still. */
-  paths: (string | null)[];
+  /** A small caption under the drawing, e.g. what is illustrative. */
+  note?: string;
   /** Drawing contents; `arrow` is the marker id for arrowheads. */
   children: (arrow: string) => ReactNode;
 }) {
@@ -177,6 +227,33 @@ export function IsoFigure({
   const root = useRef<HTMLDivElement>(null);
   const shown = active ?? tour;
   const arrow = `${id}-arrow`;
+  const narrow = useNarrow();
+  const svgRef = useRef<SVGSVGElement>(null);
+  const current = useRef<VB>(parseVB(viewBox));
+
+  // On phones, glide the camera to the shown step; zoom out when none is.
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const full = parseVB(viewBox);
+    const target =
+      (narrow && shown !== null && stepBox(svg, shown, full[2] * 0.36)) || full;
+    const from = current.current;
+    const quiet = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const start = performance.now();
+    const dur = quiet ? 0 : 650;
+    let frame = 0;
+    const tick = (now: number) => {
+      const t = dur ? Math.min(1, (now - start) / dur) : 1;
+      const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      const vb = from.map((v, i) => v + (target[i] - v) * e) as VB;
+      current.current = vb;
+      svg.setAttribute("viewBox", vb.map((v) => v.toFixed(1)).join(" "));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [narrow, shown, viewBox]);
 
   // Play the walkthrough once, the first time the figure is mostly in view.
   useEffect(() => {
@@ -209,18 +286,17 @@ export function IsoFigure({
     return () => clearTimeout(id);
   }, [tour, steps.length]);
 
-  const path = tour !== null ? paths[tour - 1] : null;
-
   return (
     <div
       className="write-diagram"
       ref={root}
       data-active={shown ?? undefined}
       data-touring={tour !== null || undefined}
-      onMouseLeave={() => setActive(null)}
+      onMouseLeave={() => !narrow && setActive(null)}
     >
       <div className="wd-figure panel panel-grid">
         <svg
+          ref={svgRef}
           className="wd-svg"
           viewBox={viewBox}
           role="img"
@@ -242,27 +318,12 @@ export function IsoFigure({
             </marker>
           </defs>
           {children(`url(#${arrow})`)}
-          {/* Tour token: one glowing dot rides the current step's path. */}
-          {path && (
-            <g key={tour} className="wd-token">
-              <circle r={14} className="wd-token-glow" />
-              <circle r={6} className="wd-token-core" />
-              <animateMotion
-                ref={(el) => (el as SVGAnimationElement | null)?.beginElement()}
-                begin="indefinite"
-                dur="0.9s"
-                fill="freeze"
-                calcMode="spline"
-                keyTimes="0;1"
-                keySplines="0.45 0 0.25 1"
-                path={path}
-              />
-            </g>
-          )}
         </svg>
+        {note && <p className="wd-note">{note}</p>}
         <button
           type="button"
           className="wd-replay"
+          data-cuelume-tap
           onClick={() => {
             setActive(null);
             setTour(1);
@@ -280,18 +341,31 @@ export function IsoFigure({
             key={s.title}
             className={shown === i + 1 ? "is-active" : ""}
             onMouseEnter={() => {
+              if (narrow) return;
               setTour(null);
               setActive(i + 1);
             }}
-            onFocus={() => setActive(i + 1)}
-            onBlur={() => setActive(null)}
-            tabIndex={0}
           >
-            <span className="wd-step-n">{i + 1}</span>
-            <div>
-              <h3>{s.title}</h3>
-              <p>{s.body}</p>
-            </div>
+            <button
+              type="button"
+              className="wd-step"
+              data-cuelume-select
+              aria-pressed={shown === i + 1}
+              onClick={() => {
+                setTour(null);
+                setActive(active === i + 1 ? null : i + 1);
+              }}
+              onFocus={() => {
+                setTour(null);
+                setActive(i + 1);
+              }}
+            >
+              <span className="wd-step-n">{i + 1}</span>
+              <span className="wd-step-text">
+                <span className="wd-step-title">{s.title}</span>
+                <span className="wd-step-body">{s.body}</span>
+              </span>
+            </button>
           </li>
         ))}
       </ol>

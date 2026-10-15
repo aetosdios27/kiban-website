@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { CopyButton } from "@/components/animate-ui/components/buttons/copy";
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@/components/animate-ui/components/radix/toggle-group";
+import { Check, Copy } from "pixelarticons/react";
+import { ToggleGroup } from "radix-ui";
+import { useEffect, useState } from "react";
+import { cue } from "@/lib/kiban/sound";
 import { ENGINE_COMMIT } from "@/lib/kiban/source";
 
 // The one place to install from. Both commands are pinned to the reviewed
@@ -24,28 +22,49 @@ type Method = keyof typeof methods;
 
 export function HeroInstall() {
   const [method, setMethod] = useState<Method>("cargo");
+  const [copied, setCopied] = useState(false);
   const m = methods[method];
+
+  useEffect(() => {
+    if (!copied) return;
+    const id = setTimeout(() => setCopied(false), 1600);
+    return () => clearTimeout(id);
+  }, [copied]);
+
+  const copy = () =>
+    navigator.clipboard.writeText(m.command).then(
+      () => {
+        setCopied(true);
+        cue("success", { emphasis: "subtle" });
+      },
+      () => {}, // Blocked clipboard: the full command is in the bar's title.
+    );
 
   return (
     <div id="installation" className="hero-install">
       <div className="flex max-w-[520px] items-center justify-between gap-4">
-        <ToggleGroup
+        <ToggleGroup.Root
           type="single"
           value={method}
-          onValueChange={(v) => v && setMethod(v as Method)}
+          onValueChange={(v) => {
+            if (!v) return;
+            setMethod(v as Method);
+            setCopied(false);
+          }}
           aria-label="Install method"
           className="install-toggle"
         >
           {(Object.keys(methods) as Method[]).map((id) => (
-            <ToggleGroupItem
+            <ToggleGroup.Item
               key={id}
               value={id}
               className="install-toggle-item"
+              data-cuelume-select
             >
               {id}
-            </ToggleGroupItem>
+            </ToggleGroup.Item>
           ))}
-        </ToggleGroup>
+        </ToggleGroup.Root>
         <span className="install-pin">
           pinned to {ENGINE_COMMIT.slice(0, 7)}
         </span>
@@ -57,12 +76,18 @@ export function HeroInstall() {
           </span>
           {m.shown}
         </code>
-        <CopyButton
-          content={m.command}
-          delay={1600}
-          aria-label={`Copy the ${method} command`}
+        <button
+          type="button"
           className="install-copy"
-        />
+          onClick={copy}
+          aria-label={copied ? "Copied" : `Copy the ${method} command`}
+        >
+          {copied ? (
+            <Check className="icon" aria-hidden="true" />
+          ) : (
+            <Copy className="icon" aria-hidden="true" />
+          )}
+        </button>
       </div>
     </div>
   );

@@ -159,17 +159,15 @@ export function LsmAscii() {
     let visible = true;
     const t0 = performance.now();
 
-    function render(time: number) {
-      const t = time % LOOP;
-      const cols = Math.floor(size / CELL_W);
-      const rows = Math.floor(size / CELL_H);
-      const k = 3.15 / size; // world units per CSS px
-      const az = Math.PI / 4 + 0.32 * Math.sin((time / 26) * Math.PI * 2);
-      const el = 0.6;
+    // The camera sways; size the shot once so the whole stack, and the writes
+    // falling onto it, stay inside the drawable rows at every angle.
+    const SWAY = 0.32;
+    const EL = 0.6;
+    const basis = (az: number) => {
       const d: V = [
-        -Math.cos(el) * Math.sin(az),
-        -Math.sin(el),
-        -Math.cos(el) * Math.cos(az),
+        -Math.cos(EL) * Math.sin(az),
+        -Math.sin(EL),
+        -Math.cos(EL) * Math.cos(az),
       ];
       const r: V = [Math.cos(az), 0, -Math.sin(az)];
       const u: V = [
@@ -177,7 +175,57 @@ export function LsmAscii() {
         r[2] * d[0] - r[0] * d[2],
         r[0] * d[1] - r[1] * d[0],
       ];
-      const centre: V = [0, 0.28, 0];
+      return { d, r, u };
+    };
+    const dot = (a: V, b: V) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    let fitK = 1;
+    let offX = 0;
+    let offY = 0;
+    function fitShot(cols: number, rows: number) {
+      let x0 = Infinity,
+        x1 = -Infinity,
+        y0 = Infinity,
+        y1 = -Infinity;
+      const tops = levels[0].y[1] + 0.95; // highest a falling write starts
+      for (let i = 0; i <= 12; i++) {
+        const { r, u } = basis(
+          Math.PI / 4 + SWAY * Math.sin((i / 12) * Math.PI * 2),
+        );
+        for (const lv of levels) {
+          for (const y of [lv.y[0], lv.y[1], tops]) {
+            if (y === tops && lv !== levels[0]) continue;
+            for (const x of [-lv.a, lv.a])
+              for (const z of [-lv.a, lv.a]) {
+                const q: V = [x, y, z];
+                x0 = Math.min(x0, dot(q, r));
+                x1 = Math.max(x1, dot(q, r));
+                y0 = Math.min(y0, dot(q, u));
+                y1 = Math.max(y1, dot(q, u));
+              }
+          }
+        }
+      }
+      // Leave room on the right for the level labels.
+      fitK = Math.max(
+        (x1 - x0) / (cols * CELL_W * 0.78),
+        (y1 - y0) / (rows * CELL_H * 0.9),
+      );
+      offX = (x0 + x1) / 2 + fitK * cols * CELL_W * 0.06;
+      offY = (y0 + y1) / 2;
+    }
+
+    function render(time: number) {
+      const t = time % LOOP;
+      const cols = Math.floor(size / CELL_W);
+      const rows = Math.floor(size / CELL_H);
+      const k = fitK; // world units per CSS px
+      const az = Math.PI / 4 + SWAY * Math.sin((time / 26) * Math.PI * 2);
+      const { d, r, u } = basis(az);
+      const centre: V = [
+        r[0] * offX + u[0] * offY,
+        r[1] * offX + u[1] * offY,
+        r[2] * offX + u[2] * offY,
+      ];
       const boxes = scene(t, base);
 
       ctx!.clearRect(0, 0, size, size);
@@ -254,9 +302,11 @@ export function LsmAscii() {
         const q: V = [lv.a, (lv.y[0] + lv.y[1]) / 2, -lv.a];
         const rel: V = [q[0] - centre[0], q[1] - centre[1], q[2] - centre[2]];
         const px =
-          (rel[0] * r[0] + rel[1] * r[1] + rel[2] * r[2]) / k + size / 2;
+          (rel[0] * r[0] + rel[1] * r[1] + rel[2] * r[2]) / k +
+          (Math.floor(size / CELL_W) * CELL_W) / 2;
         const py =
-          -(rel[0] * u[0] + rel[1] * u[1] + rel[2] * u[2]) / k + size / 2;
+          -(rel[0] * u[0] + rel[1] * u[1] + rel[2] * u[2]) / k +
+          (Math.floor(size / CELL_H) * CELL_H) / 2;
         ctx!.fillStyle = label;
         ctx!.fillText(`─ ${lv.name}`, Math.min(px + 10, size - 70), py);
       });
@@ -272,6 +322,7 @@ export function LsmAscii() {
       size = canvas!.clientWidth;
       canvas!.width = canvas!.height = Math.round(size * dpr);
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+      fitShot(Math.floor(size / CELL_W), Math.floor(size / CELL_H));
       if (reduced) render(FLUSH[0] - 0.2);
     }
 

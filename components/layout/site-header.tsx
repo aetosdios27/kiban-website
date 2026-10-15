@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Github } from "pixelarticons/react";
+import { SoundToggle } from "./sound-toggle";
 
 const links = [
   ["write path", "/#write-path"],
@@ -19,17 +20,26 @@ export function SiteHeader() {
         </Link>
         <nav className="site-nav" aria-label="Sections">
           {links.map(([label, href]) => (
-            <Link key={href} href={href}>
+            <Link key={href} href={href} data-cuelume-navigate>
               {label}
             </Link>
           ))}
         </nav>
         <div className="site-actions">
-          <a className="button" href="https://github.com/aetosdios27/kiban">
+          <SoundToggle />
+          <a
+            className="button"
+            data-cuelume-tap
+            href="https://github.com/aetosdios27/kiban"
+          >
             <Github className="icon" aria-hidden="true" />
             github
           </a>
-          <Link className="button button-primary" href="/#installation">
+          <Link
+            className="button button-primary"
+            href="/#installation"
+            data-cuelume-tap
+          >
             get started
             <ArrowRight className="icon icon-nudge" aria-hidden="true" />
           </Link>

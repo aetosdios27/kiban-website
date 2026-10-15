@@ -82,8 +82,8 @@ export function AfterWriteDiagram() {
       title="What happens after a write"
       desc="On disk, two overlapping L0 files are merged with L1 into a new set of non-overlapping L1 files. A snapshot pins the old L1 files it reads. The MANIFEST records the new files; the replaced files are deleted once nothing uses them. After a crash, memory is lost and the WAL is replayed into a fresh memtable."
       viewBox="20 20 960 650"
+      note="Keys, file numbers and sequence numbers are illustrative."
       steps={afterSteps}
-      paths={paths}
     >
       {(arrow) => (
         <>
@@ -245,14 +245,14 @@ export function AfterWriteDiagram() {
               note="no overlaps"
               rows={[
                 { text: "apple … fig" },
-                { text: "fig … kiwi" },
-                { text: "kiwi … zebra" },
+                { text: "grape … kiwi" },
+                { text: "lemon … zebra" },
               ]}
             />
           </Step>
           <Step n={[3, 4]}>
             <Card
-              at={[manTop[0] + 40, manTop[1] + 10]}
+              at={[manTop[0] + 60, manTop[1] - 70]}
               title="MANIFEST"
               note="commit"
               width={190}

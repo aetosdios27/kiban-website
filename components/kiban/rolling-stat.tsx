@@ -2,6 +2,7 @@
 
 import Scritto from "@scritto/react";
 import { useEffect, useRef, useState } from "react";
+import { cueCount } from "@/lib/kiban/sound";
 
 // The server renders the real count. Once the browser takes over, an
 // off-screen value drops to zero and rolls up the first time it is seen.
@@ -19,6 +20,7 @@ export function RollingStat({ value }: { value: string }) {
       ([entry]) => {
         if (!entry.isIntersecting) return;
         setShown(value);
+        cueCount(900);
         observer.disconnect();
       },
       { threshold: 0.6 },
