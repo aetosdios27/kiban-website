@@ -1,0 +1,196 @@
+{
+  "schema": 1,
+  "generated_at": "2026-10-16T13:26:52Z",
+  "engine": {
+    "version": "0.1.0",
+    "commit": "ff8b1a35200e8b51692ca63a9d210efc77b290fc",
+    "commit_date": "2026-10-16T13:26:52Z"
+  },
+  "specs": ["Rust 2024", "no runtime dependencies", "Linux", "MIT"],
+  "guarantees": {
+    "promised": [
+      {
+        "key": "sync()",
+        "clause": "every write accepted before it survives a crash",
+        "evidence": ["power_loss_recovers_exactly_the_last_synced_state"]
+      },
+      {
+        "key": "write(batch)",
+        "clause": "all or nothing, one WAL record",
+        "evidence": ["torn_tail_inside_batch_drops_the_whole_batch"]
+      },
+      {
+        "key": "snapshot()",
+        "clause": "unmoved by later writes and compactions",
+        "evidence": [
+          "snapshot_reads_are_immune_to_later_writes_flushes_and_compaction"
+        ]
+      },
+      {
+        "key": "a failed sync",
+        "clause": "the engine refuses writes until reopened",
+        "evidence": ["wal_sync_failure_poisons_and_blocks_all_mutations"]
+      },
+      {
+        "key": "WAL records, SST blocks, MANIFEST",
+        "clause": "CRC-32 checksummed",
+        "evidence": [
+          "corrupted_payload_byte_is_checksum_mismatch",
+          "checksummed_manifest_rejects_every_single_bit_flip",
+          "any_single_byte_corruption_is_detected_on_parse_or_read"
+        ]
+      },
+      {
+        "key": "after a crash",
+        "clause": "recovery returns a prefix of accepted writes, including every synced write",
+        "evidence": [
+          "seeded_crash_fixed_corpus",
+          "shared_seeded_crash_fixed_corpus"
+        ]
+      },
+      {
+        "key": "sync markers",
+        "clause": "damage before an authenticated later sync marker is reported as corruption",
+        "evidence": [
+          "damaged_records_need_a_later_sync_marker_to_be_corruption",
+          "embedded_marker_with_different_nonce_in_torn_unsynced_value_truncates"
+        ]
+      },
+      {
+        "key": "WAL rotation",
+        "clause": "the older log is durable before writes in the newer generation can become durable",
+        "evidence": [
+          "frozen_wal_barrier_survives_every_flush_fault_and_power_loss"
+        ]
+      }
+    ],
+    "not_promised": [
+      {
+        "key": "put() before sync()",
+        "clause": "may be lost if the machine goes down",
+        "evidence": []
+      },
+      {
+        "key": "drop",
+        "clause": "not a sync",
+        "evidence": []
+      },
+      {
+        "key": "two processes, one directory",
+        "clause": "not validated",
+        "evidence": []
+      },
+      {
+        "key": "machine power loss",
+        "clause": "simulated, not tested on hardware",
+        "evidence": []
+      },
+      {
+        "key": "API, on-disk format",
+        "clause": "may change before 1.0",
+        "evidence": []
+      }
+    ],
+    "not_built": [
+      {
+        "key": "not built yet",
+        "clause": "compression, range deletes, reverse iteration, transactions"
+      }
+    ]
+  },
+  "tests": {
+    "lib_tests": 320,
+    "crash_seeds_per_pr": 128,
+    "crashes_per_seed": 3,
+    "nightly_seeds_total": 0
+  },
+  "local_sweeps": [],
+  "bugs_found": [
+    {
+      "title": "torn unsynced WAL tail rejected as corruption",
+      "pr": 4
+    },
+    {
+      "title": "user values could mimic a sync marker",
+      "pr": 4
+    },
+    {
+      "title": "cross-generation WAL prefix violation on rotation",
+      "pr": 5
+    },
+    {
+      "title": "headerless WAL after header truncation",
+      "pr": 5
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "rust",
+      "label": "Rust",
+      "status": "shipped",
+      "link": "https://github.com/aetosdios27/kiban"
+    },
+    {
+      "id": "python",
+      "label": "Python",
+      "status": "shipped",
+      "link": "https://github.com/aetosdios27/kiban/blob/main/bindings/python/README.md"
+    },
+    {
+      "id": "mcp",
+      "label": "MCP server",
+      "status": "shipped",
+      "link": "https://github.com/aetosdios27/kiban/blob/main/bindings/python/README.md#connect-an-mcp-client"
+    },
+    {
+      "id": "c-abi",
+      "label": "C ABI",
+      "status": "shipped",
+      "link": "https://github.com/aetosdios27/kiban/blob/main/crates/kiban-ffi/kiban.h"
+    }
+  ],
+  "roadmap": [
+    {
+      "id": "crash-simulation",
+      "title": "Crash-simulation suite",
+      "status": "done"
+    },
+    {
+      "id": "storage-api",
+      "title": "Storage API: reverse/prefix scans, namespaces, range deletes, TTL",
+      "status": "next"
+    },
+    {
+      "id": "write-path",
+      "title": "Write path: group commit",
+      "status": "next"
+    },
+    {
+      "id": "transactions",
+      "title": "Transactions",
+      "status": "planned"
+    },
+    {
+      "id": "bindings",
+      "title": "Bindings: Python/MCP",
+      "status": "done"
+    },
+    {
+      "id": "benchmarks",
+      "title": "Published benchmarks",
+      "status": "planned"
+    }
+  ],
+  "examples": {
+    "basic": "use kiban::db::Kiban;\n\nfn main() -> Result<(), Box<dyn std::error::Error>> {\n    let mut db = Kiban::open(\"example-db\")?;\n    db.put(b\"hello\", b\"world\")?;\n    db.sync()?; // put alone is not crash-durable\n    assert_eq!(db.get(b\"hello\")?, Some(b\"world\".to_vec()));\n    drop(db);\n\n    let reopened = Kiban::open(\"example-db\")?;\n    assert_eq!(reopened.get(b\"hello\")?, Some(b\"world\".to_vec()));\n    Ok(())\n}",
+    "batch": "use kiban::db::{Kiban, WriteBatch};\n\nlet mut db = Kiban::open(\"example-db\")?;\nlet mut batch = WriteBatch::new();\nbatch.put(b\"pear\", b\"green\").delete(b\"plum\");\ndb.write(batch)?; // one WAL record, all or nothing\ndb.sync()?;",
+    "range": "// Live entries in ascending byte order, [start, end).\nfor entry in db.range(b\"apple\", b\"kiwi\") {\n    let (key, value) = entry?;\n    println!(\"{key:?} = {value:?}\");\n}",
+    "snapshot": "db.put(b\"pear\", b\"green\")?;\nlet snap = db.snapshot();\ndb.put(b\"pear\", b\"ripe\")?;\n\n// The snapshot still reads the value it was taken on.\nassert_eq!(db.get_at(&snap, b\"pear\")?, Some(b\"green\".to_vec()));\ndb.release_snapshot(&snap);",
+    "shared": "use kiban::db::SharedKiban;\nuse std::thread;\n\n// Clonable handles; flush and compaction run in the background.\nlet db = SharedKiban::open(\"example-db\")?;\nlet writer = db.clone();\nthread::spawn(move || writer.put(b\"pear\", b\"green\")).join().unwrap()?;\ndb.sync()?; // covers writes from every clone",
+    "python": "# From a Linux source checkout, build and install first:\n# cargo build --release -p kiban-ffi\n# python -m pip install ./bindings/python\n# Installed packages also need KIBAN_LIB pointing to libkiban_ffi.so.\nfrom kiban import Kiban\n\nwith Kiban(\"example-db\") as db:\n    db.put(\"hello\", \"world\")\n    db.sync()  # writes require sync for crash durability\n    assert db.get(\"hello\") == b\"world\"\n    with db.snapshot() as view:\n        db.put(\"hello\", \"again\")\n        assert view.get(\"hello\") == b\"world\""
+  },
+  "benchmarks": {
+    "source": "validation/COMPARISON.md",
+    "commit": "76d9d85"
+  }
+}
