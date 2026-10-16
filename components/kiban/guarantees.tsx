@@ -1,9 +1,12 @@
-import { notPromised, promised } from "@/lib/kiban/engine";
+import { evidenceUrl, type Facts } from "@/lib/kiban/facts";
 import { SectionHead } from "./section-head";
 
-// A spec sheet, not a tutorial: what v0.1.0 promises and what it doesn't,
-// a key and a clause per line.
-export function Guarantees() {
+export function Guarantees({ facts }: { facts: Facts }) {
+  const promised = facts.guarantees.promised;
+  const notPromised = [
+    ...facts.guarantees.not_promised,
+    ...facts.guarantees.not_built,
+  ];
   return (
     <section
       id="guarantees"
@@ -31,10 +34,26 @@ export function Guarantees() {
         ).map(([title, rows, kept]) => (
           <dl key={title} className="spec-col" data-kept={kept || undefined}>
             <dt className="spec-col-title">{title}</dt>
-            {rows.map(([key, clause]) => (
-              <dd key={key}>
-                <code>{key}</code>
-                <span>{clause}</span>
+            {rows.map(({ key, clause, evidence }, i) => (
+              <dd key={`${key}-${i}`}>
+                <code style={{ minWidth: 0, overflowWrap: "anywhere" }}>
+                  {key}
+                </code>
+                <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>
+                  {clause}
+                  {kept &&
+                    evidence.map((test) => (
+                      <a
+                        key={test}
+                        className="read-link"
+                        href={evidenceUrl(test)}
+                        title={test}
+                        aria-label={`Test: ${test}`}
+                      >
+                        {" · test"}
+                      </a>
+                    ))}
+                </span>
               </dd>
             ))}
           </dl>

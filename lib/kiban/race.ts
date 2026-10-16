@@ -12,6 +12,10 @@ export type Run = {
   points: Point[];
 };
 export type Engine = "kiban" | "rocksdb";
+export const comparisonEngines: { key: Engine; name: string }[] = [
+  { key: "kiban", name: "kiban v0.1.0" },
+  { key: "rocksdb", name: "RocksDB 11.8.1" },
+];
 
 const data = raw as unknown as Record<string, Record<Engine, Run>>;
 

@@ -3,11 +3,11 @@
 import { Check, Copy } from "pixelarticons/react";
 import { ToggleGroup } from "radix-ui";
 import { useEffect, useState, type ReactNode } from "react";
-import { examples, specs } from "@/lib/kiban/engine";
+import type { Example } from "@/lib/kiban/facts";
 import { cue } from "@/lib/kiban/sound";
 import { SectionHead } from "./section-head";
 
-type Id = (typeof examples)[number]["id"];
+type Id = Example["id"];
 
 // A small Rust highlighter: comments, strings, keywords, macros, types.
 // Enough for these snippets; not a general tokenizer.
@@ -39,10 +39,16 @@ function highlight(code: string): ReactNode[] {
   return out;
 }
 
-export function Quickstart() {
+export function Quickstart({
+  examples,
+  specs,
+}: {
+  examples: Example[];
+  specs: string[];
+}) {
   const [id, setId] = useState<Id>("basic");
   const [copied, setCopied] = useState(false);
-  const example = examples.find((e) => e.id === id)!;
+  const example = examples.find((e) => e.id === id) ?? examples[0];
 
   useEffect(() => {
     if (!copied) return;
@@ -51,7 +57,7 @@ export function Quickstart() {
   }, [copied]);
 
   const copy = () =>
-    navigator.clipboard.writeText(example.code).then(
+    navigator.clipboard.writeText(example?.code ?? "").then(
       () => {
         setCopied(true);
         cue("success", { emphasis: "subtle" });
@@ -83,10 +89,12 @@ export function Quickstart() {
           <div className="code-head">
             <ToggleGroup.Root
               type="single"
-              value={id}
+              value={example?.id ?? ""}
               onValueChange={(v) => {
                 if (!v) return;
-                setId(v as Id);
+                const selected = examples.find((e) => e.id === v);
+                if (!selected) return;
+                setId(selected.id);
                 setCopied(false);
               }}
               aria-label="Example"
@@ -107,8 +115,11 @@ export function Quickstart() {
               type="button"
               className="install-copy code-copy"
               onClick={copy}
+              disabled={!example}
               data-copied={copied || undefined}
-              aria-label={copied ? "Copied" : `Copy the ${id} example`}
+              aria-label={
+                copied ? "Copied" : `Copy the ${example?.id ?? ""} example`
+              }
             >
               {copied ? (
                 <Check className="icon" aria-hidden="true" />
@@ -118,10 +129,16 @@ export function Quickstart() {
             </button>
           </div>
           <pre className="code-body">
-            <code>{highlight(example.code)}</code>
+            <code>
+              {example?.id === "python"
+                ? example.code
+                : highlight(example?.code ?? "")}
+            </code>
           </pre>
         </div>
-        <p className="spec-line">{specs.join(" · ")}</p>
+        <p className="spec-line" style={{ overflowWrap: "anywhere" }}>
+          {specs.join(" · ")}
+        </p>
       </div>
     </section>
   );

@@ -12,6 +12,7 @@ import {
 import { fmtOps, fmtUs } from "@/lib/kiban/bench";
 import {
   at,
+  comparisonEngines,
   fmtDuration,
   raceLength,
   races,
@@ -30,10 +31,7 @@ import { useWidth } from "./use-width";
 
 const PLAYBACK_S = 12;
 const GUTTER = 6; // y labels, then the axis character
-const ENGINES: { key: Engine; name: string }[] = [
-  { key: "kiban", name: "kiban v0.1.0" },
-  { key: "rocksdb", name: "RocksDB 11.8.1" },
-];
+const ENGINES = comparisonEngines;
 const full = new Intl.NumberFormat("en");
 // Braille dot bits for (x, y) inside a 2 x 4 cell.
 const DOT = [

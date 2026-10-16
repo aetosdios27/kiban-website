@@ -1,13 +1,23 @@
 import { ExternalLink } from "pixelarticons/react";
-import { COMPARISON_URL } from "@/lib/kiban/engine";
+import {
+  HISTORICAL_BENCHMARK,
+  getBenchmarkRows,
+  type Facts,
+} from "@/lib/kiban/facts";
+import { ENGINE_REPO } from "@/lib/kiban/source";
 import { Race } from "./bench/race";
 import { Scoreboard } from "./bench/scoreboard";
 import { SectionHead } from "./section-head";
 
-// kiban v0.1.0 against RocksDB 11.8.1, in the site's own terms: a scoreboard
+// The historical comparison, in the site's own terms: a scoreboard
 // of every workload, then the three long runs replayed as a terminal readout.
 
-export function VersusRocksdb() {
+export function VersusRocksdb({ facts }: { facts: Facts }) {
+  const { source, commit } = facts.benchmarks;
+  const rows = getBenchmarkRows(facts);
+  const comparisonUrl = rows
+    ? `${ENGINE_REPO}/blob/${encodeURIComponent(commit || "main")}/${source || "validation/COMPARISON.md"}`
+    : HISTORICAL_BENCHMARK.url;
   return (
     <section
       id="benchmarks"
@@ -24,35 +34,35 @@ export function VersusRocksdb() {
           </>
         }
       >
-        The v0.1.0 tag against RocksDB 11.8.1 on one machine, matched settings,
-        compression off, medians of three verified trials. RocksDB wins every
-        write workload. Reads are closer, and one large read run goes the other
-        way.
+        {rows
+          ? "Throughput and latency from the engine's comparison results."
+          : HISTORICAL_BENCHMARK.introduction}
       </SectionHead>
 
       <div className="section-body bench">
-        <Scoreboard />
+        <Scoreboard rows={rows} />
 
-        <div className="bench-sub">
-          <p className="bench-sub-title">replay the long runs</p>
-          <p className="bench-sub-text">
-            The scale runs, second by second from each engine&apos;s median
-            trial. Press play, or drag across the plot.
-          </p>
-        </div>
-        <Race />
+        {rows === undefined && (
+          <>
+            <div className="bench-sub">
+              <p className="bench-sub-title">replay the long runs</p>
+              <p className="bench-sub-text">
+                The scale runs, second by second from each engine&apos;s median
+                trial. Press play, or drag across the plot.
+              </p>
+            </div>
+            <Race />
+          </>
+        )}
       </div>
 
       <div className="section-foot">
-        <p>
-          One shared desktop: Intel Core Ultra 9 185H, 22 logical CPUs, NVMe,
-          Linux 7.2. Every dataset fits in RAM, so this says nothing about
-          larger-than-memory or cold-storage performance. kiban&apos;s mixed
-          throughput stops improving past four threads, and on 1M random writes
-          it uses more memory (79.8 vs 33.9 MiB RSS) and writes more (3.09× vs
-          2.48× SST amplification). 204 trials, none failed.
+        <p style={{ overflowWrap: "anywhere" }}>
+          {rows
+            ? `Source: ${source || "comparison results"}${commit ? ` · ${commit}` : ""}. Tested workloads, not a claim about every workload.`
+            : HISTORICAL_BENCHMARK.context}
         </p>
-        <a className="read-link" href={COMPARISON_URL}>
+        <a className="read-link" href={comparisonUrl}>
           Methodology and raw results{" "}
           <ExternalLink className="icon icon-ext" aria-hidden="true" />
         </a>

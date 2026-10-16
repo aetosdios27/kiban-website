@@ -1,11 +1,6 @@
-import {
-  bench,
-  fmtOps,
-  fmtRatio,
-  fmtUs,
-  overview,
-  ratio,
-} from "@/lib/kiban/bench";
+import { bench, fmtOps, fmtRatio, fmtUs, overview } from "@/lib/kiban/bench";
+
+import { HISTORICAL_BENCHMARK, type BenchmarkRow } from "@/lib/kiban/facts";
 
 // Every workload on one board: both engines' throughput in pixel numerals,
 // p99 underneath, and a segmented bar growing either side of 1×, log scale,
@@ -14,12 +9,20 @@ import {
 
 const DOUBLINGS = 3; // each half spans 1× to 8×
 
-export function Scoreboard() {
+export function Scoreboard({ rows }: { rows?: BenchmarkRow[] }) {
+  const groups =
+    rows === undefined
+      ? overview.map((group) => ({
+          ...group,
+          rows: group.rows.map((w) => ({ ...w, ...bench(w.id) })),
+        }))
+      : [{ title: "comparison", rows }];
   return (
     <table className="sb">
       <caption className="sr-only">
-        Throughput of kiban v0.1.0 and RocksDB 11.8.1 per workload, with p99
-        latency and the ratio between them.
+        {rows === undefined
+          ? HISTORICAL_BENCHMARK.caption
+          : "Throughput of kiban and RocksDB per workload, with latency and the ratio between them."}
       </caption>
       <thead>
         <tr>
@@ -37,7 +40,7 @@ export function Scoreboard() {
           </th>
         </tr>
       </thead>
-      {overview.map((group) => (
+      {groups.map((group) => (
         <tbody key={group.title}>
           <tr className="sb-group">
             <th scope="colgroup" colSpan={4}>
@@ -45,8 +48,8 @@ export function Scoreboard() {
             </th>
           </tr>
           {group.rows.map((w) => {
-            const c = bench(w.id);
-            const r = ratio(w.id);
+            const c = w;
+            const r = c.kiban.ops.median / c.rocksdb.ops.median;
             const even = r > 0.97 && r < 1.03;
             const ahead = r >= 1;
             const kind = c.kiban.write ? "write" : "read";
@@ -54,7 +57,7 @@ export function Scoreboard() {
             const width = Math.min(1, Math.abs(Math.log2(r)) / DOUBLINGS) * 50;
             return (
               <tr key={w.id}>
-                <th scope="row">
+                <th scope="row" style={{ overflowWrap: "anywhere" }}>
                   {w.label}
                   <small>{w.detail}</small>
                 </th>
