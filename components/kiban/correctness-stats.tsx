@@ -20,7 +20,7 @@ export function CorrectnessStats() {
       aria-labelledby="correctness-title"
     >
       <SectionHead
-        index="01"
+        index="03"
         label="Correctness"
         id="correctness-title"
         title={

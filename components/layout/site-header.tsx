@@ -3,9 +3,10 @@ import { ArrowRight, Github } from "pixelarticons/react";
 import { SoundToggle } from "./sound-toggle";
 
 const links = [
-  ["write path", "/#write-path"],
-  ["correctness", "/#correctness"],
-  ["architecture", "/#architecture"],
+  ["quickstart", "/#quickstart"],
+  ["guarantees", "/#guarantees"],
+  ["benchmarks", "/#benchmarks"],
+  ["internals", "/#write-path"],
 ] as const;
 
 export function SiteHeader() {
@@ -37,7 +38,7 @@ export function SiteHeader() {
           </a>
           <Link
             className="button button-primary"
-            href="/#installation"
+            href="/#quickstart"
             data-cuelume-tap
           >
             get started

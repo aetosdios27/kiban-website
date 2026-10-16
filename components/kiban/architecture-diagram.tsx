@@ -1,7 +1,5 @@
-import { ENGINE_SOURCE } from "@/lib/kiban/source";
 import { EngineStrata } from "./engine-strata";
 import { SectionHead } from "./section-head";
-import { ExternalLink } from "pixelarticons/react";
 
 const structures = [
   [
@@ -30,7 +28,7 @@ export function ArchitectureDiagram() {
       aria-labelledby="architecture-title"
     >
       <SectionHead
-        index="04"
+        index="07"
         label="Architecture"
         id="architecture-title"
         title={
@@ -64,12 +62,6 @@ export function ArchitectureDiagram() {
           </div>
         ))}
       </dl>
-      <div className="section-foot">
-        <a className="read-link" href={`${ENGINE_SOURCE}/README.md`}>
-          Read the README{" "}
-          <ExternalLink className="icon icon-ext" aria-hidden="true" />
-        </a>
-      </div>
     </section>
   );
 }

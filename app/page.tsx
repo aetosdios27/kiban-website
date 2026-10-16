@@ -5,6 +5,9 @@ import { ArchitectureDiagram } from "@/components/kiban/architecture-diagram";
 import { SectionHead } from "@/components/kiban/section-head";
 import { AskAi } from "@/components/kiban/ask-ai";
 import { HeroInstall } from "@/components/kiban/hero-install";
+import { Quickstart } from "@/components/kiban/quickstart";
+import { Guarantees } from "@/components/kiban/guarantees";
+import { VersusRocksdb } from "@/components/kiban/versus-rocksdb";
 import { LsmAscii } from "@/components/kiban/lsm-ascii";
 import { ArrowDown } from "pixelarticons/react";
 
@@ -27,8 +30,8 @@ export default function Home() {
           </p>
           <AskAi />
           <HeroInstall />
-          <a className="mono-link" href="#write-path">
-            follow a write
+          <a className="mono-link" href="#quickstart">
+            see it in code
             <ArrowDown className="icon icon-drop" aria-hidden="true" />
           </a>
         </div>
@@ -36,14 +39,17 @@ export default function Home() {
           <LsmAscii />
         </div>
       </section>
+      <Quickstart />
+      <Guarantees />
       <CorrectnessStats />
+      <VersusRocksdb />
       <section
         id="write-path"
         className="section"
         aria-labelledby="write-title"
       >
         <SectionHead
-          index="02"
+          index="05"
           label="Write path"
           id="write-title"
           title={
@@ -65,7 +71,7 @@ export default function Home() {
         aria-labelledby="after-title"
       >
         <SectionHead
-          index="03"
+          index="06"
           label="After put()"
           id="after-title"
           title={

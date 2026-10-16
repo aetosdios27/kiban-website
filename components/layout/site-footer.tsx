@@ -5,25 +5,25 @@ import { FooterField } from "./footer-field";
 
 const columns = [
   {
-    title: "engine",
+    title: "on this site",
     links: [
-      ["write path", "/#write-path", false],
-      ["correctness", "/#correctness", false],
-      ["architecture", "/#architecture", false],
-      ["install", "/#installation", false],
+      ["quickstart", "/#quickstart", false],
+      ["guarantees", "/#guarantees", false],
+      ["benchmarks", "/#benchmarks", false],
+      ["internals", "/#write-path", false],
     ],
   },
   {
-    title: "source",
+    title: "project",
     links: [
-      ["github", ENGINE_REPO, true],
-      ["readme", `${ENGINE_REPO}#readme`, true],
+      ["source code", ENGINE_REPO, true],
       [
         `${ENGINE_TAG} release`,
         `${ENGINE_REPO}/releases/tag/${ENGINE_TAG}`,
         true,
       ],
-      ["license", `${ENGINE_REPO}/blob/main/LICENSE`, true],
+      ["license", "/license", false],
+      ["credits", "/license#credits", false],
     ],
   },
 ] as const;
@@ -70,7 +70,12 @@ export function SiteFooter() {
       </div>
 
       <div className="footer-legal page-width">
-        <span>© 2026 aetosdios27</span>
+        <span>
+          © 2026 aetos ·{" "}
+          <Link href="/license" data-cuelume-navigate>
+            MIT licensed
+          </Link>
+        </span>
         <span>基盤 · n. foundation</span>
       </div>
 

@@ -5,9 +5,18 @@ The website for [kiban](https://github.com/aetosdios27/kiban), an embedded LSM-t
 ## What's on the page
 
 - **Install:** `cargo` and source instructions, pinned to the engine's `v0.1.0` release tag.
+- **Quickstart:** tabbed examples (basic, batch, range, snapshot, shared).
+- **Guarantees:** a spec sheet of what v0.1.0 promises and what it does not.
 - **Correctness:** the counts reported for the project's recovery, fault-injection and concurrency runs. They come from the engine's `validation/CORRECTNESS.md` at `v0.1.0`; this site does not rerun them.
-- **Write path** and **what happens after `put()`:** two isometric explainers following one write, `pear = green`, through the WAL, memtable, SST, MANIFEST and compaction.
-- **Architecture:** how the pieces fit together, with links into the engine source at `v0.1.0`.
+- **Benchmarks:** kiban `v0.1.0` against RocksDB 11.8.1: a scoreboard of every workload (throughput, p99 and the ratio as a segmented bar), and the three long runs replayed second by second as a braille terminal plot. Medians of three verified trials.
+- **Write path**, **what happens after `put()`** and **architecture:** isometric explainers following one write, `pear = green`, through the WAL, memtable, SST, MANIFEST and compaction.
+- **`/license`:** the MIT text and credits for bundled fonts and libraries.
+
+All engine facts live in `lib/kiban/engine.ts`, each traceable to a file in the engine repository. Benchmark numbers and race replays come from `lib/kiban/bench-data.json` and `lib/kiban/race-data.json`, generated from the engine's raw trial results:
+
+```bash
+python3 -I scripts/bench-data.py ../kiban lib/kiban
+```
 
 Illustrative keys and sequence numbers in the diagrams describe stages of the design, not live engine state.
 
