@@ -50,7 +50,7 @@ export default async function Home() {
       <Quickstart examples={getExamples(facts)} specs={facts.specs} />
       <Guarantees facts={facts} />
       <CorrectnessStats facts={facts} />
-      <VersusRocksdb facts={facts} />
+      <VersusRocksdb />
       <section
         id="write-path"
         className="section"

@@ -1,6 +1,8 @@
-import { evidenceUrl, type Facts } from "@/lib/kiban/facts";
+import { type Facts } from "@/lib/kiban/facts";
 import { SectionHead } from "./section-head";
 
+// A spec sheet, not a tutorial: a key and a clause per line. The precise
+// wording and the tests that check each promise live in the row's tooltip.
 export function Guarantees({ facts }: { facts: Facts }) {
   const promised = facts.guarantees.promised;
   const notPromised = [
@@ -34,26 +36,10 @@ export function Guarantees({ facts }: { facts: Facts }) {
         ).map(([title, rows, kept]) => (
           <dl key={title} className="spec-col" data-kept={kept || undefined}>
             <dt className="spec-col-title">{title}</dt>
-            {rows.map(({ key, clause, evidence }, i) => (
-              <dd key={`${key}-${i}`}>
-                <code style={{ minWidth: 0, overflowWrap: "anywhere" }}>
-                  {key}
-                </code>
-                <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>
-                  {clause}
-                  {kept &&
-                    evidence.map((test) => (
-                      <a
-                        key={test}
-                        className="read-link"
-                        href={evidenceUrl(test)}
-                        title={test}
-                        aria-label={`Test: ${test}`}
-                      >
-                        {" · test"}
-                      </a>
-                    ))}
-                </span>
+            {rows.map(({ key, clause, detail, evidence }) => (
+              <dd key={key} title={tooltip(detail, evidence)}>
+                <code>{key}</code>
+                <span>{clause}</span>
               </dd>
             ))}
           </dl>
@@ -61,4 +47,9 @@ export function Guarantees({ facts }: { facts: Facts }) {
       </div>
     </section>
   );
+}
+
+function tooltip(detail: string, evidence: string[]): string | undefined {
+  const tests = evidence.length ? `Checked by: ${evidence.join(", ")}` : "";
+  return [detail, tests].filter(Boolean).join("\n") || undefined;
 }

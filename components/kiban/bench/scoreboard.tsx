@@ -1,6 +1,12 @@
-import { bench, fmtOps, fmtRatio, fmtUs, overview } from "@/lib/kiban/bench";
-
-import { HISTORICAL_BENCHMARK, type BenchmarkRow } from "@/lib/kiban/facts";
+import {
+  bench,
+  fmtOps,
+  fmtRatio,
+  fmtUs,
+  overview,
+  ratio,
+} from "@/lib/kiban/bench";
+import { HISTORICAL_BENCHMARK } from "@/lib/kiban/facts";
 
 // Every workload on one board: both engines' throughput in pixel numerals,
 // p99 underneath, and a segmented bar growing either side of 1×, log scale,
@@ -9,21 +15,10 @@ import { HISTORICAL_BENCHMARK, type BenchmarkRow } from "@/lib/kiban/facts";
 
 const DOUBLINGS = 3; // each half spans 1× to 8×
 
-export function Scoreboard({ rows }: { rows?: BenchmarkRow[] }) {
-  const groups =
-    rows === undefined
-      ? overview.map((group) => ({
-          ...group,
-          rows: group.rows.map((w) => ({ ...w, ...bench(w.id) })),
-        }))
-      : [{ title: "comparison", rows }];
+export function Scoreboard() {
   return (
     <table className="sb">
-      <caption className="sr-only">
-        {rows === undefined
-          ? HISTORICAL_BENCHMARK.caption
-          : "Throughput of kiban and RocksDB per workload, with latency and the ratio between them."}
-      </caption>
+      <caption className="sr-only">{HISTORICAL_BENCHMARK.caption}</caption>
       <thead>
         <tr>
           <th scope="col">workload</th>
@@ -40,7 +35,7 @@ export function Scoreboard({ rows }: { rows?: BenchmarkRow[] }) {
           </th>
         </tr>
       </thead>
-      {groups.map((group) => (
+      {overview.map((group) => (
         <tbody key={group.title}>
           <tr className="sb-group">
             <th scope="colgroup" colSpan={4}>
@@ -48,8 +43,8 @@ export function Scoreboard({ rows }: { rows?: BenchmarkRow[] }) {
             </th>
           </tr>
           {group.rows.map((w) => {
-            const c = w;
-            const r = c.kiban.ops.median / c.rocksdb.ops.median;
+            const c = bench(w.id);
+            const r = ratio(w.id);
             const even = r > 0.97 && r < 1.03;
             const ahead = r >= 1;
             const kind = c.kiban.write ? "write" : "read";
@@ -57,7 +52,7 @@ export function Scoreboard({ rows }: { rows?: BenchmarkRow[] }) {
             const width = Math.min(1, Math.abs(Math.log2(r)) / DOUBLINGS) * 50;
             return (
               <tr key={w.id}>
-                <th scope="row" style={{ overflowWrap: "anywhere" }}>
+                <th scope="row">
                   {w.label}
                   <small>{w.detail}</small>
                 </th>

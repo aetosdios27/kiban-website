@@ -1,4 +1,3 @@
-import { ENGINE_REPO } from "@/lib/kiban/source";
 import {
   FACT_COPY,
   evidenceFraming,
@@ -33,8 +32,8 @@ export function CorrectnessStats({ facts }: { facts: Facts }) {
       <dl className="section-body correctness-results">
         {results.map(({ value, label }) => (
           <div key={label}>
-            <dt style={{ overflowWrap: "anywhere" }}>{label}</dt>
-            <dd style={{ overflowWrap: "anywhere" }}>
+            <dt>{label}</dt>
+            <dd>
               <RollingStat value={value} />
             </dd>
           </div>
@@ -51,33 +50,6 @@ export function CorrectnessStats({ facts }: { facts: Facts }) {
           Read the validation report{" "}
           <ExternalLink className="icon icon-ext" aria-hidden="true" />
         </a>
-        {facts.bugs_found.length > 0 && (
-          <>
-            <h3>bugs found</h3>
-            <ul>
-              {facts.bugs_found
-                .filter((bug) => bug.title)
-                .slice(0, 6)
-                .map((bug, i) => (
-                  <li
-                    key={`${bug.pr}-${i}`}
-                    style={{ overflowWrap: "anywhere" }}
-                  >
-                    {bug.pr ? (
-                      <a
-                        className="read-link"
-                        href={`${ENGINE_REPO}/pull/${bug.pr}`}
-                      >
-                        {bug.title} · #{bug.pr}
-                      </a>
-                    ) : (
-                      bug.title
-                    )}
-                  </li>
-                ))}
-            </ul>
-          </>
-        )}
       </div>
     </section>
   );

@@ -6,29 +6,11 @@ export const FACTS_URL =
   "https://raw.githubusercontent.com/aetosdios27/kiban/site-data/facts.json";
 export const FACTS_REVALIDATE_SECONDS = 3600;
 
-export type Guarantee = { key: string; clause: string; evidence: string[] };
-type Spread = { median: number; min: number; max: number };
-export type PublishedBenchmarkRow = {
-  campaign: string;
-  case: string;
-  engine: "kiban" | "rocksdb";
-  trials?: number;
-  ops_per_second: Spread;
-  read_p99_us: Spread | null;
-  write_p99_us: Spread | null;
-};
-type ComparisonSide = {
-  ops: Spread;
-  read: { p99: number } | null;
-  write: { p99: number } | null;
-};
-export type BenchmarkRow = {
-  id: string;
-  label: string;
+export type Guarantee = {
+  key: string;
+  clause: string;
   detail: string;
-  campaign: string;
-  kiban: ComparisonSide;
-  rocksdb: ComparisonSide;
+  evidence: string[];
 };
 export type Facts = {
   schema: 1;
@@ -66,11 +48,7 @@ export type Facts = {
     status?: "done" | "active" | "next" | "planned";
   }[];
   examples: Partial<Record<ExampleId, string>>;
-  benchmarks: {
-    source: string;
-    commit: string;
-    rows?: PublishedBenchmarkRow[];
-  };
+  correctness_stats: { value: string; label: string }[];
 };
 
 export const EXAMPLE_IDS = [
@@ -137,42 +115,8 @@ function guarantee(value: unknown): Guarantee {
   return {
     key: text(row.key),
     clause: text(row.clause),
+    detail: text(row.detail),
     evidence: list(row.evidence, text).filter(Boolean),
-  };
-}
-function finite(value: unknown): number {
-  if (typeof value !== "number" || !Number.isFinite(value) || value < 0)
-    throw new Error("expected a finite nonnegative measurement");
-  return value;
-}
-function spread(value: unknown): Spread {
-  const row = object(value);
-  return {
-    median: finite(row.median),
-    min: finite(row.min),
-    max: finite(row.max),
-  };
-}
-function publishedBenchmark(value: unknown): PublishedBenchmarkRow {
-  const row = object(value);
-  const name = text(row.case);
-  const engine = choice(row.engine, ["kiban", "rocksdb"]);
-  if (!name || !engine)
-    throw new Error("benchmark row needs a case and engine");
-  const ops = spread(row.ops_per_second);
-  if (ops.median === 0)
-    throw new Error("benchmark throughput must be positive");
-  const read = row.read_p99_us == null ? null : spread(row.read_p99_us);
-  const write = row.write_p99_us == null ? null : spread(row.write_p99_us);
-  if (!read && !write) throw new Error("benchmark needs read or write latency");
-  return {
-    campaign: text(row.campaign),
-    case: name,
-    engine,
-    trials: count(row.trials),
-    ops_per_second: ops,
-    read_p99_us: read,
-    write_p99_us: write,
   };
 }
 
@@ -184,7 +128,6 @@ export function parseFacts(value: unknown): Facts {
   const guarantees = object(root.guarantees);
   const tests = object(root.tests);
   const examples = object(root.examples);
-  const benchmarks = object(root.benchmarks);
   const parsedExamples: Facts["examples"] = {};
   for (const id of EXAMPLE_IDS) {
     const code = text(examples[id]);
@@ -244,14 +187,12 @@ export function parseFacts(value: unknown): Facts {
       };
     }),
     examples: parsedExamples,
-    benchmarks: {
-      source: text(benchmarks.source),
-      commit: text(benchmarks.commit),
-      rows:
-        benchmarks.rows === undefined
-          ? undefined
-          : list(benchmarks.rows, publishedBenchmark),
-    },
+    correctness_stats: list(root.correctness_stats, (value) => {
+      const row = object(value);
+      const raw = row.value;
+      const shown = typeof raw === "number" ? stat(count(raw) ?? 0) : text(raw);
+      return { value: shown, label: text(row.label) };
+    }).filter((row) => row.value && row.label),
   };
 }
 
@@ -300,7 +241,18 @@ function statNumber(value: number): string {
         : undefined,
   );
 }
+// The grid's original look: full digits with separators ("530,100"),
+// compact only once a number would crowd its cell.
+function stat(value: number): string {
+  return value.toLocaleString(
+    "en",
+    value >= 10_000_000
+      ? { notation: "compact", maximumSignificantDigits: 3 }
+      : undefined,
+  );
+}
 export function getCorrectnessResults(facts: Facts) {
+  if (facts.correctness_stats.length === 6) return facts.correctness_stats;
   const results: { value: string; label: string }[] = [];
   const {
     crash_seeds_per_pr: seeds,
@@ -338,7 +290,7 @@ export function getCorrectnessResults(facts: Facts) {
 export function evidenceFraming(facts: Facts): string {
   return facts.guarantees.promised.length &&
     facts.guarantees.promised.every((row) => row.evidence.length)
-    ? "every claim links to the test that checks it."
+    ? "Every guarantee names the test that checks it."
     : "Test links are shown when the feed publishes them.";
 }
 
@@ -391,56 +343,4 @@ export function heroStatement(facts: Facts): string {
   const rust = facts.specs.some((spec) => spec.startsWith("Rust"));
   const linux = facts.specs.includes("Linux");
   return `kiban is an embedded LSM-tree key-value store${linux ? " for Linux" : ""}${rust ? ", written in Rust" : ""}: a write-ahead log, memtables, SSTs, leveled compaction, snapshots and crash recovery.`;
-}
-
-export function getBenchmarkRows(facts: Facts): BenchmarkRow[] | undefined {
-  if (facts.benchmarks.rows === undefined) return undefined;
-  const pairs = new Map<
-    string,
-    {
-      campaign: string;
-      case: string;
-      kiban?: PublishedBenchmarkRow;
-      rocksdb?: PublishedBenchmarkRow;
-    }
-  >();
-  for (const row of facts.benchmarks.rows) {
-    const key = `${row.campaign}/${row.case}`;
-    const pair = pairs.get(key) ?? { campaign: row.campaign, case: row.case };
-    pair[row.engine] = row;
-    pairs.set(key, pair);
-  }
-  return [...pairs].flatMap(([id, pair]) => {
-    const { kiban, rocksdb } = pair;
-    if (!kiban || !rocksdb) return [];
-    const kind =
-      kiban.write_p99_us && rocksdb.write_p99_us
-        ? "write"
-        : kiban.read_p99_us && rocksdb.read_p99_us
-          ? "read"
-          : undefined;
-    if (!kind) return [];
-    const side = (row: PublishedBenchmarkRow): ComparisonSide => ({
-      ops: row.ops_per_second,
-      read:
-        kind === "read" && row.read_p99_us
-          ? { p99: row.read_p99_us.median }
-          : null,
-      write:
-        kind === "write" && row.write_p99_us
-          ? { p99: row.write_p99_us.median }
-          : null,
-    });
-    const trials = kiban.trials === rocksdb.trials ? kiban.trials : undefined;
-    return [
-      {
-        id,
-        campaign: pair.campaign,
-        label: pair.case.replaceAll("-", " "),
-        detail: trials === undefined ? "" : `${trials} trials`,
-        kiban: side(kiban),
-        rocksdb: side(rocksdb),
-      },
-    ];
-  });
 }

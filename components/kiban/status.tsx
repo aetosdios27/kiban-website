@@ -1,6 +1,11 @@
 import type { Facts } from "@/lib/kiban/facts";
 import { SectionHead } from "./section-head";
 
+const ORDER = ["done", "active", "next", "planned"];
+const rank = (status?: string) =>
+  status ? ORDER.indexOf(status) : ORDER.length;
+
+// Capability, then roadmap, as the guarantees' key-and-clause spec sheet.
 export function Status({ facts }: { facts: Facts }) {
   if (!facts.capabilities.length && !facts.roadmap.length) return null;
   return (
@@ -22,20 +27,10 @@ export function Status({ facts }: { facts: Facts }) {
           <dt className="spec-col-title">capabilities</dt>
           {facts.capabilities
             .filter((row) => row.label)
-            .map((row, i) => (
-              <dd key={`${row.id}-${i}`}>
-                <code style={{ minWidth: 0, overflowWrap: "anywhere" }}>
-                  {row.link ? (
-                    <a className="read-link" href={row.link}>
-                      {row.label}
-                    </a>
-                  ) : (
-                    row.label
-                  )}
-                </code>
-                <span>
-                  {row.status?.replaceAll("_", " ") ?? "status unavailable"}
-                </span>
+            .map((row) => (
+              <dd key={row.id}>
+                <code>{row.label}</code>
+                <span>{row.status?.replaceAll("_", " ") ?? "unknown"}</span>
               </dd>
             ))}
         </dl>
@@ -43,12 +38,11 @@ export function Status({ facts }: { facts: Facts }) {
           <dt className="spec-col-title">roadmap</dt>
           {facts.roadmap
             .filter((row) => row.title)
-            .map((row, i) => (
-              <dd key={`${row.id}-${i}`}>
-                <code style={{ minWidth: 0, overflowWrap: "anywhere" }}>
-                  {row.title}
-                </code>
-                <span>{row.status ?? "status unavailable"}</span>
+            .toSorted((a, b) => rank(a.status) - rank(b.status))
+            .map((row) => (
+              <dd key={row.id}>
+                <code>{row.status ?? "unknown"}</code>
+                <span>{row.title}</span>
               </dd>
             ))}
         </dl>

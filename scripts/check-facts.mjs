@@ -29,15 +29,10 @@ const facts = load(path.join(root, "lib/kiban/facts.ts"));
 const snapshot = JSON.parse(
   readFileSync(path.join(root, "lib/kiban/facts.snapshot.json"), "utf8"),
 );
-const bench = JSON.parse(
-  readFileSync(path.join(root, "lib/kiban/bench-data.json"), "utf8"),
-);
 
 test("snapshot corrections and shipped bindings", () => {
   const parsed = facts.parseFacts(snapshot);
-  assert.equal(parsed.tests.lib_tests, 320);
   assert.equal(parsed.tests.crash_seeds_per_pr, 128);
-  assert.equal(parsed.tests.crashes_per_seed, 3);
   assert.equal(parsed.bugs_found.length, 4);
   for (const id of ["python", "mcp", "c-abi"]) {
     assert.equal(
@@ -51,7 +46,18 @@ test("snapshot corrections and shipped bindings", () => {
   );
   assert.ok(!JSON.stringify(parsed).includes("no checksum yet"));
   assert.equal(facts.getExamples(parsed).at(-1).id, "python");
-  assert.equal(facts.getCorrectnessResults(parsed)[0].value, "128 × 3");
+  const grid = facts.getCorrectnessResults(parsed);
+  assert.equal(grid.length, 6);
+  assert.deepEqual(grid[4], {
+    value: "530,100",
+    label: "Acknowledged writes verified",
+  });
+  for (const row of [
+    ...parsed.guarantees.promised,
+    ...parsed.guarantees.not_promised,
+  ]) {
+    assert.ok(row.key.length <= 32 && row.clause.length <= 64, row.key);
+  }
 });
 
 test("partial and empty feeds never inherit stale snapshot claims", () => {
@@ -60,11 +66,7 @@ test("partial and empty feeds never inherit stale snapshot claims", () => {
   assert.deepEqual(parsed.specs, []);
   assert.deepEqual(facts.getExamples(parsed), []);
   assert.deepEqual(facts.getCorrectnessResults(parsed), []);
-  assert.equal(parsed.benchmarks.rows, undefined);
-  assert.deepEqual(
-    facts.parseFacts({ schema: 1, benchmarks: { rows: [] } }).benchmarks.rows,
-    [],
-  );
+  assert.deepEqual(parsed.correctness_stats, []);
   assert.equal(
     facts.getExamples(
       facts.parseFacts({ schema: 1, examples: { python: " " } }),
@@ -96,6 +98,7 @@ test("invalid schema, nested types, counts, links and enums are rejected", () =>
 test("strongest sweep and nonzero nightly evidence lead before library tests", () => {
   const parsed = facts.parseFacts({
     ...snapshot,
+    correctness_stats: [],
     local_sweeps: [
       { seeds: 1000, suite: "direct", result: "pass" },
       { seeds: 10000000, suite: "shared", result: "pass" },
@@ -106,51 +109,7 @@ test("strongest sweep and nonzero nightly evidence lead before library tests", (
   assert.equal(results[1].value, "10M");
   assert.match(results[1].label, /shared.*pass/);
   assert.equal(results[2].label, "Nightly seeds, total");
-  assert.equal(results[3].value, "320");
-});
-
-test("published per-engine benchmark rows pair by campaign and case", () => {
-  const source = bench["read-100m"];
-  const rows = ["kiban", "rocksdb"].map((engine) => ({
-    campaign: source.campaign,
-    case: "read-100m",
-    engine,
-    trials: 3,
-    ops_per_second: source[engine].ops,
-    read_p99_us: {
-      median: source[engine].read.p99,
-      min: source[engine].read.p99,
-      max: source[engine].read.p99,
-    },
-    write_p99_us: null,
-  }));
-  const parsed = facts.parseFacts({ schema: 1, benchmarks: { rows } });
-  assert.deepEqual(parsed.benchmarks.rows, rows);
-  const comparisons = facts.getBenchmarkRows(parsed);
-  assert.equal(comparisons.length, 1);
-  assert.equal(comparisons[0].kiban.read.p99, source.kiban.read.p99);
-  assert.equal(comparisons[0].rocksdb.ops.median, source.rocksdb.ops.median);
-  assert.equal(comparisons[0].detail, "3 trials");
-  assert.deepEqual(
-    facts.getBenchmarkRows(
-      facts.parseFacts({
-        schema: 1,
-        benchmarks: { rows: [rows[0], { ...rows[1], campaign: "other" }] },
-      }),
-    ),
-    [],
-  );
-  assert.throws(() =>
-    facts.parseFacts({
-      schema: 1,
-      benchmarks: {
-        rows: [{ ...rows[0], ops_per_second: { median: 0, min: 0, max: 0 } }],
-      },
-    }),
-  );
-  assert.throws(() =>
-    facts.parseFacts({ schema: 1, benchmarks: { rows: [{}] } }),
-  );
+  assert.equal(results[3].value, "328");
 });
 
 test("loader uses the hourly fetch option and falls back on every boundary failure", async () => {
