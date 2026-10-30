@@ -58,7 +58,7 @@ function LookupFigure() {
   return (
     <figure className="lib-figure">
       <svg
-        viewBox="0 0 900 430"
+        viewBox="0 0 960 500"
         role="img"
         aria-label="A sorted-block lookup takes five steps. A perfect-hash lookup takes three."
       >
@@ -66,13 +66,13 @@ function LookupFigure() {
           sorted blocks
         </text>
         {BLOCK_PATH.toReversed().map((label, i) => (
-          <Step key={label} o={[170, 300 - i * 56]} z={0} label={label} />
+          <Step key={label} o={[170, 310 - i * 56]} z={0} label={label} />
         ))}
         <text className="lf-title" x="500" y="26">
           perfect-hash point index
         </text>
         {HASH_PATH.toReversed().map((label, i) => (
-          <Step key={label} o={[640, 245 - i * 56]} z={0} label={label} hot />
+          <Step key={label} o={[640, 254 - i * 56]} z={0} label={label} hot />
         ))}
       </svg>
       <figcaption>

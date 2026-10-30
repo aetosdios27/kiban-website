@@ -1941,6 +1941,7 @@ main {
 }
 .lib-cards-three {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: var(--s-8);
 }
 .lib-cards-three li:last-child:nth-child(odd) {
   grid-column: auto;
@@ -2167,10 +2168,23 @@ main {
 .lib-figure {
   margin-block: var(--s-3) var(--s-6);
 }
-.lib-figure svg {
+.lib-figure > svg {
   display: block;
   width: 100%;
   height: auto;
+}
+.lib-figure .sb-num {
+  font-size: 22px;
+}
+.lib-figure .sb th[scope="row"] {
+  width: 24%;
+  font-size: 15px;
+}
+.lib-figure .sb-scale {
+  font-size: 11px;
+}
+.lib-figure p {
+  margin-block: 0;
 }
 .lib-wide {
   width: min(884px, calc(100vw - 96px - 220px - 64px));

@@ -37,7 +37,7 @@ export function LibraryTeaser() {
         })}
       </ol>
       <div className="section-foot">
-        <p>Every report, written for reading rather than for a repository.</p>
+        <p>The reports worth reading, set for the screen.</p>
         <Link className="read-link" href="/library">
           Open the library <ArrowRight className="icon" aria-hidden="true" />
         </Link>
