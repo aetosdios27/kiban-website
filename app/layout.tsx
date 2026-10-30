@@ -1,3 +1,4 @@
+import { SmoothScroll } from "@/components/layout/smooth-scroll";
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -75,6 +76,7 @@ export default function RootLayout({
       className={`${monaSans.variable} ${departureMono.variable} ${commitMono.variable}`}
     >
       <body>
+        <SmoothScroll />
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>

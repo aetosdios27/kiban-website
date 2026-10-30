@@ -1,10 +1,9 @@
 import { ExternalLink } from "pixelarticons/react";
 import { BENCHMARK, headlines, losses, unmeasured } from "@/lib/kiban/bench";
-import { LightRace } from "./bench/light-race";
-import { MachineRoom } from "./bench/machine-room";
 import { Race } from "./bench/race";
 import { Scoreboard } from "./bench/scoreboard";
 import { Sweep } from "./bench/sweep";
+import { TreeScene } from "./bench/tree-scene";
 import { RollingStat } from "./rolling-stat";
 import { SectionHead } from "./section-head";
 
@@ -44,8 +43,6 @@ export function VersusField() {
           ))}
         </dl>
 
-        <LightRace />
-
         <div className="bench-sub">
           <p className="bench-sub-title">every workload</p>
           <p className="bench-sub-text">
@@ -64,16 +61,16 @@ export function VersusField() {
         </div>
         <Sweep />
 
-        <div className="mr-fallback">
-          <div className="bench-sub">
-            <p className="bench-sub-title">replay the long runs</p>
-            <p className="bench-sub-text">
-              The scale runs, second by second from each engine&apos;s median
-              trial. Press play, or drag across the plot.
-            </p>
-          </div>
-          <Race />
+        <TreeScene />
+
+        <div className="bench-sub">
+          <p className="bench-sub-title">replay the long runs</p>
+          <p className="bench-sub-text">
+            The scale runs, second by second from each engine&apos;s median
+            trial. Press play, or drag across the plot.
+          </p>
         </div>
+        <Race />
 
         <div className="bench-sub">
           <p className="bench-sub-title">the other column</p>
@@ -100,8 +97,6 @@ export function VersusField() {
           ))}
         </div>
       </div>
-
-      <MachineRoom />
 
       <div className="section-foot">
         <p>{BENCHMARK.context}</p>

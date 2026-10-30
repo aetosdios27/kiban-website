@@ -17,12 +17,14 @@ import {
 } from "@/lib/kiban/bench";
 import { cue } from "@/lib/kiban/sound";
 import { plot } from "./braille";
+import { Morph } from "./morph";
 import { useWidth } from "./use-width";
 
 // Durable throughput as writers double, in the replay's terminal readout. The
 // plot stops at measured points only: nothing is interpolated between them.
 
-const STEP_MS = 900;
+const SWEEP_MS = 5200;
+const RETURN_RATE = 0.012; // stops per millisecond when easing back to a stop
 const GUTTER = 6;
 const SERIES: { key: SweepKey; name: string; cls: string; lane: string }[] = [
   { key: "kiban-group", name: "kiban", cls: "b-kiban", lane: "lane-kiban" },
@@ -36,11 +38,17 @@ const CEILING = Math.max(
 );
 
 function Readout({
+  pos,
   stop,
+  onDrag,
+  onRelease,
   onSeek,
   onToggle,
 }: {
+  pos: number;
   stop: number;
+  onDrag: (pos: number) => void;
+  onRelease: () => void;
   onSeek: (stop: number) => void;
   onToggle: () => void;
 }) {
@@ -69,7 +77,19 @@ function Readout({
       dy(p.ops),
     ]);
     plot(ghost, cols, Hd, pts);
-    plot(lit[s], cols, Hd, pts.slice(0, stop + 1));
+    // The head glides between measured points along the plotted segment.
+    const whole = Math.floor(pos);
+    const played = pts.slice(0, whole + 1);
+    const next = pts[whole + 1];
+    if (next) {
+      const f = pos - whole;
+      const [x0, y0] = pts[whole];
+      played.push([
+        Math.round(x0 + (next[0] - x0) * f),
+        Math.round(y0 + (next[1] - y0) * f),
+      ]);
+    }
+    plot(lit[s], cols, Hd, played);
   });
 
   const yLabels = new Map<number, string>([
@@ -128,12 +148,12 @@ function Readout({
     for (let c = 0; c < label.length; c++) axis[start + c] = label[c];
   });
   const marker: string[] = Array(cols).fill(" ");
-  marker[Math.min(cols - 1, dx(stop) >> 1)] = "▲";
+  marker[Math.min(cols - 1, dx(pos) >> 1)] = "▲";
 
   const seek = (clientX: number, el: Element) => {
     const rect = el.getBoundingClientRect();
     const col = (clientX - rect.left) / ch - GUTTER;
-    onSeek(Math.min(LAST, Math.max(0, Math.round((col / cols) * LAST))));
+    onDrag(Math.min(LAST, Math.max(0, (col / cols) * LAST)));
   };
 
   return (
@@ -168,7 +188,10 @@ function Readout({
       onPointerMove={(e) =>
         dragging.current && seek(e.clientX, e.currentTarget)
       }
-      onPointerUp={() => (dragging.current = false)}
+      onPointerUp={() => {
+        dragging.current = false;
+        onRelease();
+      }}
     >
       <span ref={probe} className="tr-probe" aria-hidden="true">
         ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
@@ -195,30 +218,72 @@ function Readout({
 }
 
 export function Sweep() {
-  const [stop, setStop] = useState(LAST);
+  const [pos, setPos] = useState(LAST);
   const [playing, setPlaying] = useState(false);
+  const position = useRef(LAST);
+  const target = useRef(LAST);
+  const frame = useRef(0);
+  const stop = Math.round(pos);
+
+  const glide = () => {
+    cancelAnimationFrame(frame.current);
+    let last = performance.now();
+    const tick = (now: number) => {
+      const step = (now - last) * RETURN_RATE;
+      last = now;
+      const gap = target.current - position.current;
+      position.current =
+        Math.abs(gap) <= step
+          ? target.current
+          : position.current + Math.sign(gap) * step;
+      setPos(position.current);
+      if (position.current !== target.current)
+        frame.current = requestAnimationFrame(tick);
+    };
+    frame.current = requestAnimationFrame(tick);
+  };
 
   useEffect(() => {
     if (!playing) return;
-    const timer = setTimeout(() => {
-      if (stop >= LAST) return;
-      const next = stop + 1;
-      setStop(next);
-      if (next === LAST) {
+    let last = performance.now();
+    const speed = LAST / SWEEP_MS;
+    const tick = (now: number) => {
+      position.current = Math.min(
+        LAST,
+        position.current + (now - last) * speed,
+      );
+      last = now;
+      setPos(position.current);
+      if (position.current >= LAST) {
         setPlaying(false);
         cue("success", { emphasis: "subtle" });
+        return;
       }
-    }, STEP_MS);
-    return () => clearTimeout(timer);
-  }, [playing, stop]);
+      frame.current = requestAnimationFrame(tick);
+    };
+    frame.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame.current);
+  }, [playing]);
 
+  const drag = (next: number) => {
+    setPlaying(false);
+    cancelAnimationFrame(frame.current);
+    position.current = next;
+    setPos(next);
+  };
   const seek = (next: number) => {
     setPlaying(false);
-    setStop(next);
+    target.current = next;
+    glide();
   };
+  const release = () => seek(Math.round(position.current));
   const toggle = () => {
     if (playing) return setPlaying(false);
-    if (stop >= LAST) setStop(0);
+    cancelAnimationFrame(frame.current);
+    if (position.current >= LAST) {
+      position.current = 0;
+      setPos(0);
+    }
     setPlaying(true);
   };
 
@@ -228,7 +293,7 @@ export function Sweep() {
         <p className="tr-sweep-title">writes per second, every one synced</p>
         <div className="tr-controls">
           <span className="tr-clock">
-            {sweep.writers[stop]} writers
+            <Morph value={`${sweep.writers[stop]} writers`} />
             <small>
               {stop + 1} of {LAST + 1}
             </small>
@@ -244,12 +309,19 @@ export function Sweep() {
             ) : (
               <Play className="icon" aria-hidden="true" />
             )}
-            {playing ? "pause" : stop >= LAST ? "replay" : "play"}
+            {playing ? "pause" : pos >= LAST ? "replay" : "play"}
           </button>
         </div>
       </div>
 
-      <Readout stop={stop} onSeek={seek} onToggle={toggle} />
+      <Readout
+        pos={pos}
+        stop={stop}
+        onDrag={drag}
+        onRelease={release}
+        onSeek={seek}
+        onToggle={toggle}
+      />
 
       <div className="tr-lanes">
         {SERIES.map(({ key, name, lane }) => {
@@ -265,9 +337,13 @@ export function Sweep() {
               <span className="tr-meter" aria-hidden="true">
                 <span style={{ width: `${(point.ops / CEILING) * 100}%` }} />
               </span>
-              <span className="tr-count">{fmtFull(point.ops)}</span>
+              <span className="tr-count">
+                <Morph value={fmtFull(point.ops)} />
+              </span>
               <span className="tr-live">
-                p99 {fmtUs(point.p99)} · {fmtFull(point.syncs)} syncs
+                <Morph
+                  value={`p99 ${fmtUs(point.p99)} · ${fmtFull(point.syncs)} syncs`}
+                />
               </span>
             </div>
           );

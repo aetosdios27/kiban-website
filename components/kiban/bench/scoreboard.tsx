@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import { Morph } from "./morph";
 import {
   BENCHMARK,
   RECEIPT,
@@ -123,29 +124,31 @@ function Cells({
   return (
     <>
       <td className="sb-num num-kiban" data-win={(!even && ahead) || undefined}>
-        {mine}
+        <Morph value={mine} />
         <small>
-          {unit}p99 {fmtUs(row.kiban.p99)}
+          <Morph value={`${unit}p99 ${fmtUs(row.kiban.p99)}`} />
         </small>
       </td>
       <td
         className="sb-num num-rocks"
         data-win={(!even && !ahead) || undefined}
       >
-        {other}
+        <Morph value={other} />
         <small>
-          {unit}p99 {fmtUs(theirs.p99)}
+          <Morph value={`${unit}p99 ${fmtUs(theirs.p99)}`} />
         </small>
       </td>
       <td className="sb-ratio">
         <div className="sb-ratio-in">
           <span className="sb-track" aria-hidden="true">
-            {!even && (
-              <span
-                className={`sb-bar ${ahead ? "bar-ahead" : "bar-behind"}`}
-                style={{ width: `${width}%` }}
-              />
-            )}
+            <span
+              className="sb-bar bar-ahead"
+              style={{ width: `${!even && ahead ? width : 0}%` }}
+            />
+            <span
+              className="sb-bar bar-behind"
+              style={{ width: `${!even && !ahead ? width : 0}%` }}
+            />
           </span>
           <button
             type="button"
@@ -155,9 +158,13 @@ function Cells({
             data-ahead={(!even && ahead) || undefined}
             title={`${theirs.trials} paired trials against ${name}, ratios ${theirs.min} to ${theirs.max}; above 1 favors kiban`}
           >
-            {even
-              ? "even"
-              : `${fmtRatio(theirs.ratio)} ${ahead ? "faster" : "slower"}`}
+            <Morph
+              value={
+                even
+                  ? "even"
+                  : `${fmtRatio(theirs.ratio)} ${ahead ? "faster" : "slower"}`
+              }
+            />
             <span aria-hidden="true"> {open ? "▴" : "▾"}</span>
           </button>
         </div>
@@ -200,10 +207,12 @@ export function Scoreboard() {
               <i className="key key-kiban" /> kiban
             </th>
             <th scope="col">
-              <i className="key key-rocks" /> {name}
+              <i className="key key-rocks" /> <Morph value={name} />
             </th>
             <th scope="col" className="sb-scale">
-              <span>← {name} faster</span>
+              <span>
+                <Morph value={`← ${name} faster`} />
+              </span>
               <span>1×</span>
               <span>kiban faster →</span>
             </th>

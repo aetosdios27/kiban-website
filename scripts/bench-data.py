@@ -8,6 +8,8 @@ Writes two files into <output dir>:
   above 1 means kiban is faster. Latencies are in microseconds.
 - race-data.json: for the long scale runs, the one-second samples of each
   engine's median trial, so the site can replay the run.
+- tree-data.json: kiban's LSM shape each second of its median write run,
+  through the post-run drain, for the pinned tree scene.
 """
 
 import json
@@ -214,6 +216,36 @@ def race(trial_dirs):
     }
 
 
+def tree(trial_dir, rocksdb_finish_s):
+    """Per-second engine state as [t, ops/s, [files per level], debt MiB,
+    flushes, compactions]."""
+    samples = []
+    for line in (trial_dir / "samples.jsonl").read_text().splitlines():
+        sample = json.loads(line)
+        if sample["elapsed_s"] < 0.01:
+            continue
+        engine = sample["engine"]
+        files = [0, 0, 0, 0]
+        for level in engine["levels"]:
+            files[level["level"]] = level["files"]
+        samples.append([
+            round(sample["elapsed_s"], 2),
+            round(sample["interval"]["total_ops_s"]),
+            files,
+            round(engine["native_debt_bytes"] / 2**20),
+            engine["flush_count"],
+            engine["compaction_count"],
+        ])
+    summary = json.loads((trial_dir / "summary.json").read_text())
+    config = json.loads((trial_dir / "config.json").read_text())
+    return {
+        "l0_stop": config["matched_knobs"]["l0_stop"],
+        "finish_s": round(summary["elapsed_s"], 2),
+        "rocksdb_finish_s": rocksdb_finish_s,
+        "samples": samples,
+    }
+
+
 def main(repo: str, output: str):
     root = Path(repo) / "validation" / "site-refresh"
     raw = root / "raw"
@@ -235,6 +267,11 @@ def main(repo: str, output: str):
             for engine in ENGINES
         }
     (out / "race-data.json").write_text(json.dumps(races) + "\n")
+    shape = tree(
+        root / "scale" / races["write-10m"]["kiban"]["trial"],
+        races["write-10m"]["rocksdb"]["finish_s"],
+    )
+    (out / "tree-data.json").write_text(json.dumps(shape) + "\n")
     print(f"{len(data['rows'])} rows, {len(races)} races -> {out}")
 
 

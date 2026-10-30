@@ -103,9 +103,6 @@ export const RECEIPT = {
   folder: `${ENGINE_REPO}/tree/main/validation/site-refresh`,
 };
 
-const LIGHT_M_PER_US = 299.792458;
-export const lightMetres = (us: number) => Math.round(us * LIGHT_M_PER_US);
-
 export const headlines = [
   {
     value: fmtRatio(comparison("point", "rocksdb").ratio),
