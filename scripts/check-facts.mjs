@@ -158,6 +158,22 @@ test("loader uses the hourly fetch option and falls back on every boundary failu
   }
 });
 
+test("every benchmark row carries its commit and paired evidence", () => {
+  const bench = JSON.parse(
+    readFileSync(path.join(root, "lib/kiban/bench-data.json"), "utf8"),
+  );
+  assert.match(bench.commit, /^[0-9a-f]{40}$/);
+  assert.ok(bench.rows.length);
+  for (const row of bench.rows) {
+    const cells = Object.values(row.rivals);
+    assert.ok(cells.length, row.id);
+    for (const cell of cells) {
+      assert.equal(cell.trials, 5, row.id);
+      assert.ok(cell.min <= cell.ratio && cell.ratio <= cell.max, row.id);
+    }
+  }
+});
+
 // No new digit-bearing factual copy in components. Section indexes, diagram
 // coordinates, illustrative L0/L1 labels and fixed chart scales are UI data.
 export function claimStrings(file, source) {
@@ -179,7 +195,7 @@ export function claimStrings(file, source) {
       if (
         /\d/.test(value) &&
         (/\bv?\d+\.\d+\.\d+\b/.test(value) ||
-          /\b\d[\d,.]*\s*(?:(?:library|crash|simulated|injected|acknowledged)\s+)?(?:tests?|seeds?|crashes|recoveries|mutations|faults?|cycles|trials?|threads?|CPUs?|MiB|MB|writes?|reads?)\b/i.test(
+          /\b\d[\d,.]*\s*(?:(?:library|crash|simulated|injected|acknowledged)\s+)?(?:tests?|seeds?|crashes|recoveries|mutations|faults?|cycles|trials?|threads?|writers?|CPUs?|MiB|MB|writes?|reads?)\b/i.test(
             value,
           ) ||
           /\b(?:Rust|Linux|CRC)[ -]?\d/i.test(value) ||
@@ -217,6 +233,7 @@ test("components contain no digit-bearing engine claim strings", () => {
   for (const source of [
     'const claim = "320 library tests";',
     "<p>128 crash seeds per PR</p>",
+    "<p>16 writers</p>",
     "<p>Rust 2024 · v0.1.0</p>",
     'const results = [["260", "Library tests"]];',
   ])

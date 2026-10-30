@@ -294,18 +294,6 @@ export function evidenceFraming(facts: Facts): string {
     : "Test links are shown when the feed publishes them.";
 }
 
-// Historical comparison copy belongs to its committed dataset, never to the
-// current engine version. Feed-provided rows use their own provenance instead.
-export const HISTORICAL_BENCHMARK = {
-  introduction:
-    "The v0.1.0 tag against RocksDB 11.8.1 on one machine, matched settings, compression off, medians of three verified trials. RocksDB wins every write workload. Reads are closer, and one large read run goes the other way.",
-  caption:
-    "Throughput of kiban v0.1.0 and RocksDB 11.8.1 per workload, with p99 latency and the ratio between them.",
-  context:
-    "One shared desktop: Intel Core Ultra 9 185H, 22 logical CPUs, NVMe, Linux 7.2. Every dataset fits in RAM, so this says nothing about larger-than-memory or cold-storage performance. kiban's mixed throughput stops improving past four threads, and on 1M random writes it uses more memory (79.8 vs 33.9 MiB RSS) and writes more (3.09× vs 2.48× SST amplification). 204 trials, none failed.",
-  url: `${ENGINE_REPO}/blob/main/validation/COMPARISON.md`,
-};
-
 export const FACT_COPY = {
   correctness:
     "Simulated crashes, injected filesystem faults and real SIGKILLs. After each one, the reopened database is checked for a prefix of accepted writes that includes every synced write.",

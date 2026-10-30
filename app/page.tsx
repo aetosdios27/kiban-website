@@ -7,7 +7,7 @@ import { AskAi } from "@/components/kiban/ask-ai";
 import { HeroInstall } from "@/components/kiban/hero-install";
 import { Quickstart } from "@/components/kiban/quickstart";
 import { Guarantees } from "@/components/kiban/guarantees";
-import { VersusRocksdb } from "@/components/kiban/versus-rocksdb";
+import { VersusField } from "@/components/kiban/versus-field";
 import { LsmAscii } from "@/components/kiban/lsm-ascii";
 import {
   getFacts,
@@ -50,7 +50,7 @@ export default async function Home() {
       <Quickstart examples={getExamples(facts)} specs={facts.specs} />
       <Guarantees facts={facts} />
       <CorrectnessStats facts={facts} />
-      <VersusRocksdb />
+      <VersusField />
       <section
         id="write-path"
         className="section"

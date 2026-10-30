@@ -1070,8 +1070,8 @@ main {
   color: var(--muted-foreground);
 }
 
-/* 04 Benchmarks: a scoreboard of every workload, then the long runs
-   replayed as a terminal readout. kiban is the accent; RocksDB is grey. */
+/* 04 Benchmarks: headline ratios, a scoreboard per opponent, then the writer
+   sweep and long runs as terminal readouts. kiban is the accent; rivals are grey. */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -1097,6 +1097,9 @@ main {
 }
 
 /* Scoreboard */
+.sb-picks {
+  margin-bottom: var(--s-2);
+}
 .sb {
   width: 100%;
   border-collapse: collapse;
@@ -1310,6 +1313,10 @@ main {
 .race-play:hover:enabled {
   background: var(--primary);
   filter: brightness(1.08);
+}
+.tr-sweep-title {
+  font: var(--text-ui) var(--font-mono);
+  color: var(--foreground);
 }
 .tr-meta {
   margin: var(--s-2) 0 var(--s-3);

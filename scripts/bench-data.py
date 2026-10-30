@@ -1,48 +1,170 @@
-"""Builds the site's benchmark data from the engine's comparison results.
+"""Builds the site's benchmark data from the engine's site-refresh campaign.
 
 Usage: python3 -I scripts/bench-data.py <path to kiban repo> <output dir>
 
 Writes two files into <output dir>:
-- bench-data.json: per case and engine, the median of the three trials'
-  summary.json plus their min and max. Latencies are in microseconds.
+- bench-data.json: the scoreboard, the writer sweep and the resource figures.
+  A ratio is the median of same-trial ratios, never a quotient of medians, and
+  above 1 means kiban is faster. Latencies are in microseconds.
 - race-data.json: for the long scale runs, the one-second samples of each
   engine's median trial, so the site can replay the run.
 """
 
 import json
+import re
 import statistics
 import sys
 from pathlib import Path
 
-CAMPAIGNS = ["smoke", "scaling-validated-build", "durability", "cache", "scale"]
 ENGINES = ["kiban", "rocksdb"]
-PCTS = ["p50", "p95", "p99", "p999"]
 RACES = ["read-100m", "updates-10m", "write-10m"]
+RIVALS = ["rocksdb", "sqlite", "lmdb"]
+WRITERS = [1, 2, 4, 8, 16]
+SWEEP = {
+    "kiban-group": "kiban-group",
+    "kiban-sync": "kiban-sync",
+    "rocksdb": "rocksdb-x",
+    "sqlite": "sqlite-x",
+}
+# id, group, label, detail, scenario, workload. Every row is the normal layout,
+# the one organic writes produce; bulk fixtures flatter every engine differently.
+LATENCY_ROWS = [
+    ("point", "reads", "point read", "1M records", "read-normal-default", "recall-by-id"),
+    ("latest", "reads", "latest ten", "1M records, one agent", "read-normal-default", "recent-for-agent"),
+    ("point-32", "reads", "point read, small cache", "32 MiB cache, mmap on", "read-normal-32", "recall-by-id"),
+    ("latest-32", "reads", "latest ten, small cache", "32 MiB cache, mmap on", "read-normal-32", "recent-for-agent"),
+    ("remember", "durable writes", "new record", "synced before return", "write-durable", "remember"),
+    ("update", "durable writes", "update", "synced before return", "write-durable", "update"),
+]
 
 
-def spread(values):
-    values = [v for v in values if v is not None]
-    if not values:
-        return None
+def trials(folder, label):
+    """Per-trial stage records for one engine, keyed by workload then trial."""
+    out = {}
+    for path in sorted(folder.glob(f"r[0-9]-{label}.jsonl")):
+        trial = path.name.split("-", 1)[0]
+        for line in path.read_text().splitlines():
+            record = json.loads(line)
+            if record.get("errors", 0):
+                raise SystemExit(f"{path}: errors reported")
+            if record["type"] == "stage":
+                out.setdefault(record["workload"], {})[trial] = record["latency"]
+    return out
+
+
+def comparison(pairs):
+    ratios = [mine / theirs for mine, theirs in pairs]
     return {
-        "median": statistics.median(values),
-        "min": min(values),
-        "max": max(values),
+        "ratio": round(statistics.median(ratios), 3),
+        "min": round(min(ratios), 3),
+        "max": round(max(ratios), 3),
+        "trials": len(ratios),
     }
 
 
-def latency(trials, kind):
+def side(records):
+    return {
+        "p50": statistics.median(r["p50_ns"] for r in records.values()) / 1000,
+        "p99": statistics.median(r["p99_ns"] for r in records.values()) / 1000,
+    }
+
+
+def latency_rows(raw):
+    rows = []
+    for id, group, label, detail, scenario, workload in LATENCY_ROWS:
+        folder = raw / "measure" / scenario
+        kiban = trials(folder, "kiban")[workload]
+        rivals = {}
+        for rival in RIVALS:
+            theirs = trials(folder, rival)[workload]
+            if kiban.keys() != theirs.keys() or len(kiban) != 5:
+                raise SystemExit(f"{scenario}/{rival}: expected five paired trials")
+            rivals[rival] = side(theirs) | comparison(
+                (theirs[t]["p50_ns"], kiban[t]["p50_ns"]) for t in kiban
+            )
+        rows.append({
+            "id": id,
+            "group": group,
+            "label": label,
+            "detail": detail,
+            "kiban": side(kiban),
+            "rivals": rivals,
+        })
+    return rows
+
+
+def sweep_trials(folder, case, writers):
+    runs = {}
+    for path in sorted(folder.glob(f"{case}-t{writers}-r[0-9].json")):
+        run = json.loads(path.read_text())
+        if not run["verified"]:
+            raise SystemExit(f"{path}: unverified run")
+        runs[path.stem.rsplit("-", 1)[1]] = run
+    if len(runs) != 5:
+        raise SystemExit(f"{case}/{writers}: expected five trials, got {len(runs)}")
+    return runs
+
+
+def sweep(folder):
+    series = {}
+    for key, case in SWEEP.items():
+        points = []
+        for writers in WRITERS:
+            runs = sweep_trials(folder, case, writers).values()
+            points.append({
+                "ops": statistics.median(r["throughput"] for r in runs),
+                "p99": statistics.median(r["p99_us"] for r in runs),
+                "syncs": statistics.median(r["fdatasync"] + r["fsync"] for r in runs),
+            })
+        series[key] = points
+    return {"writers": WRITERS, "series": series}
+
+
+def writers_row(folder):
+    """The group-commit row: throughput rather than latency, 16 writers."""
+    kiban = sweep_trials(folder, "kiban-group", 16)
+    unit = lambda runs: {
+        "ops": statistics.median(r["throughput"] for r in runs.values()),
+        "p99": statistics.median(r["p99_us"] for r in runs.values()),
+    }
+    rivals = {}
+    for rival in ("rocksdb", "sqlite"):
+        theirs = sweep_trials(folder, f"{rival}-x", 16)
+        rivals[rival] = unit(theirs) | comparison(
+            (kiban[t]["throughput"], theirs[t]["throughput"]) for t in kiban
+        )
+    return {
+        "id": "writers-16",
+        "group": "durable writes",
+        "label": "16 concurrent writers",
+        "detail": "group commit, every write verified",
+        "kiban": unit(kiban),
+        "rivals": rivals,
+    }
+
+
+def resources(raw):
+    folder = raw / "measure" / "read-normal-default"
+    receipts = [
+        json.loads(line)
+        for line in (folder / "commands.jsonl").read_text().splitlines()
+    ]
     out = {}
-    for p in PCTS:
-        vals = []
-        for t in trials:
-            lat = t["metrics"].get(f"{kind}_latency") or {}
-            ns = lat.get(f"{p}_ns")
-            if ns is not None and lat.get("samples"):
-                vals.append(ns / 1000)
-        if vals:
-            out[p] = statistics.median(vals)
-    return out or None
+    for engine in ["kiban", *RIVALS]:
+        rss = []
+        for path in sorted(folder.glob(f"r[0-9]-{engine}.time.txt")):
+            match = re.search(r"Maximum resident set size \(kbytes\): (\d+)", path.read_text())
+            rss.append(int(match.group(1)) / 1024)
+        disk = [
+            r["disk"]["logical_bytes"] / 2**20
+            for r in receipts
+            if r["name"].endswith(f"-{engine}")
+        ]
+        out[engine] = {
+            "rss_mib": round(statistics.median(rss)),
+            "disk_mib": round(statistics.median(disk)),
+        }
+    return out
 
 
 def race(trial_dirs):
@@ -81,44 +203,27 @@ def race(trial_dirs):
 
 
 def main(repo: str, output: str):
-    root = Path(repo) / "validation" / "comparison-results"
-    cases = {}
-    for campaign in CAMPAIGNS:
-        for summary in sorted((root / campaign).glob("*-r[0-9]-*/summary.json")):
-            name = summary.parent.name
-            case, _, engine = name.rpartition("-")
-            case = case.rsplit("-r", 1)[0]
-            if engine not in ENGINES:
-                continue
-            entry = cases.setdefault(case, {"campaign": campaign})
-            entry.setdefault(engine, []).append(json.loads(summary.read_text()))
-
-    data = {}
-    for case, entry in sorted(cases.items()):
-        row = {"campaign": entry["campaign"]}
-        for engine in ENGINES:
-            trials = entry.get(engine, [])
-            if len(trials) != 3:
-                raise SystemExit(f"{case}/{engine}: expected 3 trials, got {len(trials)}")
-            row[engine] = {
-                "ops": spread([t["metrics"]["total_ops_s"] for t in trials]),
-                "read": latency(trials, "read"),
-                "write": latency(trials, "write"),
-                "rss_mib": statistics.median(t["peak_sampled_rss"] for t in trials) / 2**20,
-            }
-        data[case] = row
+    root = Path(repo) / "validation" / "site-refresh"
+    raw = root / "raw"
+    metadata = json.loads((raw / "metadata.json").read_text())
+    sweeps = root / "group-commit"
+    data = {
+        "commit": metadata["engine_src_commit"],
+        "rows": [*latency_rows(raw), writers_row(sweeps)],
+        "sweep": sweep(sweeps),
+        "resources": resources(raw),
+    }
     out = Path(output)
     (out / "bench-data.json").write_text(json.dumps(data, indent=1) + "\n")
 
     races = {}
     for case in RACES:
-        campaign = root / data[case]["campaign"]
         races[case] = {
-            engine: race(sorted(campaign.glob(f"{case}-r[0-9]-{engine}")))
+            engine: race(sorted((root / "scale").glob(f"{case}-r[0-9]-{engine}")))
             for engine in ENGINES
         }
     (out / "race-data.json").write_text(json.dumps(races) + "\n")
-    print(f"{len(data)} cases, {len(races)} races -> {out}")
+    print(f"{len(data['rows'])} rows, {len(races)} races -> {out}")
 
 
 if __name__ == "__main__":

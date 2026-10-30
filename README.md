@@ -8,7 +8,7 @@ The website for [kiban](https://github.com/aetosdios27/kiban), an embedded LSM-t
 - **Quickstart:** tabbed examples (basic, batch, range, snapshot, shared).
 - **Guarantees:** a spec sheet of what v0.1.0 promises and what it does not.
 - **Correctness:** the counts reported for the project's recovery, fault-injection and concurrency runs. They come from the engine's `validation/CORRECTNESS.md` at `v0.1.0`; this site does not rerun them.
-- **Benchmarks:** kiban `v0.1.0` against RocksDB 11.8.1: a scoreboard of every workload (throughput, p99 and the ratio as a segmented bar), and the three long runs replayed second by second as a braille terminal plot. Medians of three verified trials.
+- **Benchmarks:** kiban at one `main` commit against tuned RocksDB, SQLite and LMDB: headline ratios, a scoreboard per opponent, a durable-writer sweep and the long runs replayed as braille terminal plots, then what those wins cost. Five paired trials on the read and write rows.
 - **Write path**, **what happens after `put()`** and **architecture:** isometric explainers following one write, `pear = green`, through the WAL, memtable, SST, MANIFEST and compaction.
 - **`/license`:** the MIT text and credits for bundled fonts and libraries.
 
