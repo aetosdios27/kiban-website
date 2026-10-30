@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Morph } from "./bench/morph";
 import { ASSISTANTS, type Assistant } from "@/lib/kiban/assistants";
 import { cue } from "@/lib/kiban/sound";
 
@@ -35,9 +36,14 @@ export function AskAi() {
       <p className="ask-ai-label">
         ask your ai
         <span className="ask-ai-note" aria-live="polite">
-          {copied
-            ? `prompt copied, paste it into ${copied}`
-            : "opens with a prompt to explain kiban"}
+          <Morph
+            value={
+              copied
+                ? `prompt copied, paste it into ${copied}`
+                : "opens with a prompt to explain kiban"
+            }
+            duration={420}
+          />
         </span>
       </p>
       <ul className="ask-ai-list">

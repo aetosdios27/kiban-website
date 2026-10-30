@@ -24,6 +24,7 @@ import {
 } from "@/lib/kiban/race";
 import { cue } from "@/lib/kiban/sound";
 import { DOT, plot } from "./braille";
+import { Morph, useSampled } from "./morph";
 import { useWidth } from "./use-width";
 
 // The long runs, replayed as a terminal readout: operations completed over
@@ -31,6 +32,7 @@ import { useWidth } from "./use-width";
 // trial. Still until you press play or scrub; a race plays back in ~12 s.
 
 const PLAYBACK_S = 12;
+const COUNT_MS = 160; // long enough for a morph, short enough to feel live
 const GUTTER = 6; // y labels, then the axis character
 const ENGINES = comparisonEngines;
 const full = new Intl.NumberFormat("en");
@@ -247,6 +249,50 @@ function Readout({
   );
 }
 
+// ------------------------------------------------------------------ lane --
+
+function Lane({
+  id,
+  engine,
+  name,
+  t,
+  leader,
+}: {
+  id: RaceId;
+  engine: Engine;
+  name: string;
+  t: number;
+  leader: Engine;
+}) {
+  const r = run(id, engine);
+  const s = at(r, t);
+  const won = s.finished && engine === leader;
+  const live = s.finished
+    ? `${won ? "first, " : "done, "}${fmtDuration(r.finish_s)}`
+    : t > 0
+      ? `${fmtOps(s.rate)} ops/s${s.p99 !== null ? ` · p99 ${fmtUs(s.p99)}` : ""}`
+      : "ready";
+  const count = useSampled(full.format(s.done), COUNT_MS);
+  const status = useSampled(live, COUNT_MS);
+  return (
+    <div className={`tr-lane lane-${engine}`}>
+      <span className="tr-lane-name">
+        <i className={`key key-${engine === "kiban" ? "kiban" : "rocks"}`} />
+        {name}
+      </span>
+      <span className="tr-meter" aria-hidden="true">
+        <span style={{ width: `${(s.done / r.operations) * 100}%` }} />
+      </span>
+      <span className="tr-count">
+        <Morph value={count} duration={COUNT_MS} />
+      </span>
+      <span className="tr-live" data-won={won || undefined}>
+        <Morph value={status} duration={COUNT_MS} />
+      </span>
+    </div>
+  );
+}
+
 // ------------------------------------------------------------------ race --
 
 export function Race() {
@@ -305,6 +351,7 @@ export function Race() {
   const race = races.find((r) => r.id === id)!;
   const result = winner(id);
   const stalled = stalls(run(id, "kiban")).length;
+  const clock = useSampled(`t + ${t.toFixed(1)} s`, COUNT_MS);
 
   return (
     <div className="tr">
@@ -326,8 +373,10 @@ export function Race() {
         </div>
         <div className="tr-controls">
           <span className="tr-clock">
-            t + {t.toFixed(1)} s
-            <small>{Math.round(len / PLAYBACK_S)}× speed</small>
+            <Morph value={clock} duration={COUNT_MS} />
+            <small>
+              <Morph value={`${Math.round(len / PLAYBACK_S)}× speed`} />
+            </small>
           </span>
           <button
             type="button"
@@ -346,56 +395,35 @@ export function Race() {
       </div>
 
       <p className="tr-meta">
-        {race.detail}. Operations completed over time; the finish line is{" "}
-        {fmtOps(run(id, "kiban").operations)}.
+        <Morph
+          value={`${race.detail}. Operations completed over time; the finish line is ${fmtOps(run(id, "kiban").operations)}.`}
+        />
       </p>
 
       <Readout id={id} t={t} onSeek={seek} onToggle={toggle} />
 
       <div className="tr-lanes">
-        {ENGINES.map(({ key, name }) => {
-          const r = run(id, key);
-          const s = at(r, t);
-          const won = s.finished && key === result.key;
-          return (
-            <div key={key} className={`tr-lane lane-${key}`}>
-              <span className="tr-lane-name">
-                <i
-                  className={`key key-${key === "kiban" ? "kiban" : "rocks"}`}
-                />
-                {name}
-              </span>
-              <span className="tr-meter" aria-hidden="true">
-                <span style={{ width: `${(s.done / r.operations) * 100}%` }} />
-              </span>
-              <span className="tr-count">{full.format(s.done)}</span>
-              <span className="tr-live">
-                {s.finished ? (
-                  <b data-won={won || undefined}>
-                    {won ? "first, " : "done, "}
-                    {fmtDuration(r.finish_s)}
-                  </b>
-                ) : t > 0 ? (
-                  <>
-                    {fmtOps(s.rate)} ops/s
-                    {s.p99 !== null && <> · p99 {fmtUs(s.p99)}</>}
-                  </>
-                ) : (
-                  "ready"
-                )}
-              </span>
-            </div>
-          );
-        })}
+        {ENGINES.map(({ key, name }) => (
+          <Lane
+            key={key}
+            id={id}
+            engine={key}
+            name={name}
+            t={t}
+            leader={result.key}
+          />
+        ))}
       </div>
 
       <p className="tr-caption">
         <span>
-          {result.who} finished {fmtDuration(result.by)} ahead.
+          <Morph
+            value={`${result.who} finished ${fmtDuration(result.by)} ahead.`}
+          />
         </span>{" "}
-        {stalled > 0 &&
-          `kiban stalled for ${stalled} separate seconds with no completed writes. `}
-        {race.note}
+        <Morph
+          value={`${stalled > 0 ? `kiban stalled for ${stalled} separate seconds with no completed writes. ` : ""}${race.note}`}
+        />
       </p>
     </div>
   );

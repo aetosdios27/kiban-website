@@ -3,6 +3,7 @@
 import { Check, Copy } from "pixelarticons/react";
 import { ToggleGroup } from "radix-ui";
 import { useEffect, useState } from "react";
+import { Morph } from "./bench/morph";
 import { cue } from "@/lib/kiban/sound";
 import type { InstallMethods } from "@/lib/kiban/facts";
 
@@ -74,7 +75,7 @@ export function HeroInstall({
           <span className="install-prompt" aria-hidden="true">
             $
           </span>
-          {m.shown}
+          <Morph value={m.shown} duration={420} />
         </code>
         <button
           type="button"

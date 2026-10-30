@@ -60,39 +60,91 @@ export function filesAt(t: number): [number, number, number, number] {
   ];
 }
 
-export type Beat = {
-  from: number;
+const at = (t: number) => nearest(t);
+const STOP_WINDOW_S = 10;
+const cluster = stopped.reduce((best, s) => {
+  const inWindow = stopped.filter(
+    (o) => o[0] >= s[0] && o[0] < s[0] + STOP_WINDOW_S,
+  );
+  return inWindow.length > best.length ? inWindow : best;
+}, [] as Sample[]);
+const firstFull = stopped.find((s) => s[2][0] >= l0Stop)!;
+const clusterEnd = cluster.at(-1)!;
+const secondsBehind = Math.round(finishS - rocksdbFinishS);
+
+export type Stop = {
+  t: number;
   title: string;
   body: string;
   active: 0 | 1 | 2 | 3;
+  failure?: boolean;
 };
 
-export const beats: Beat[] = [
+// The moments worth stopping on, in run order. Every number is read from the
+// samples above, and a failure stop lands exactly on a stopped second.
+export const stops: Stop[] = [
   {
-    from: 0,
-    title: "the tree fills",
-    body: `L1 climbs from ${samples[0][2][1]} files to ${nearest(firstStop)[2][1]} as flushes keep landing above it.`,
-    active: 1,
-  },
-  {
-    from: firstStop - 1,
-    title: "writers stop",
-    body: `${stopped.length} seconds of this run complete no writes. In ${fullStops} of them, L0 sits at its limit of ${l0Stop} files.`,
+    t: 0,
+    title: "one write run",
+    body: "Four levels of a real tree, stacked. Scroll to open them.",
     active: 0,
   },
   {
-    from: lastStop,
-    title: "the stops end",
-    body: `No more stopped seconds, but ${peakDebt} MiB is still queued above level targets.`,
+    t: 0,
+    title: "the tree",
+    body: "Each flush lands in L0. Compaction moves files down through L1, L2 and L3.",
+    active: 0,
+  },
+  {
+    t: at(6)[0],
+    title: "the tree fills",
+    body: `Six seconds in, L0 holds ${at(6)[2][0]} files and ${at(6)[3]} MiB is already queued above level targets.`,
     active: 1,
   },
   {
-    from: finishS,
-    title: "the tree settles",
-    body: `With writers gone, L1 empties and L3 takes the weight. The queue reaches zero ${(endS - finishS).toFixed(0)} seconds after the last write.`,
+    t: firstStop,
+    title: "first stop",
+    body: `No write completes this second. L0 is not full here: it holds ${stopped[0][2][0]} files, while L1 has grown to ${stopped[0][2][1]}.`,
+    active: 0,
+    failure: true,
+  },
+  {
+    t: firstFull[0],
+    title: "L0 is full",
+    body: `L0 reaches its limit of ${l0Stop} files, and writers wait. ${fullStops} of the ${stopped.length} stopped seconds look like this one.`,
+    active: 0,
+    failure: true,
+  },
+  {
+    t: clusterEnd[0],
+    title: "the worst stretch",
+    body: `${cluster.length} stopped seconds inside ${STOP_WINDOW_S} seconds. RocksDB finished this whole run at ${rocksdbFinishS.toFixed(0)} s.`,
+    active: 0,
+    failure: true,
+  },
+  {
+    t: lastStop,
+    title: "last stop",
+    body: `The final stopped second of ${stopped.length}. ${at(lastStop)[3]} MiB is still queued above level targets.`,
+    active: 0,
+    failure: true,
+  },
+  {
+    t: finishS,
+    title: "last write",
+    body: `All 10M writes done, ${secondsBehind} seconds behind RocksDB. L1 still holds ${at(finishS)[2][1]} files.`,
+    active: 1,
+  },
+  {
+    t: at(finishS + 2)[0],
+    title: "the tree drains",
+    body: `With writers gone, L1 falls to ${at(finishS + 2)[2][1]} files as L2 and L3 take them in.`,
+    active: 2,
+  },
+  {
+    t: endS,
+    title: "settled",
+    body: `L1 is empty and L3 holds ${samples.at(-1)![2][3]} files. The queue reaches zero ${(endS - finishS).toFixed(0)} seconds after the last write.`,
     active: 3,
   },
 ];
-
-export const beatAt = (t: number) =>
-  beats.reduce((best, beat) => (t >= beat.from ? beat : best), beats[0]);
