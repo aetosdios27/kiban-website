@@ -81,12 +81,18 @@ def latency_rows(raw):
                 raise SystemExit(f"{scenario}/{rival}: expected five paired trials")
             rivals[rival] = side(theirs) | comparison(
                 (theirs[t]["p50_ns"], kiban[t]["p50_ns"]) for t in kiban
-            )
+            ) | {
+                "runs": [
+                    [kiban[t]["p50_ns"] / 1000, theirs[t]["p50_ns"] / 1000]
+                    for t in sorted(kiban)
+                ]
+            }
         rows.append({
             "id": id,
             "group": group,
             "label": label,
             "detail": detail,
+            "source": f"raw/measure/{scenario}",
             "kiban": side(kiban),
             "rivals": rivals,
         })
@@ -132,12 +138,18 @@ def writers_row(folder):
         theirs = sweep_trials(folder, f"{rival}-x", 16)
         rivals[rival] = unit(theirs) | comparison(
             (kiban[t]["throughput"], theirs[t]["throughput"]) for t in kiban
-        )
+        ) | {
+            "runs": [
+                [kiban[t]["throughput"], theirs[t]["throughput"]]
+                for t in sorted(kiban)
+            ]
+        }
     return {
         "id": "writers-16",
         "group": "durable writes",
         "label": "16 concurrent writers",
         "detail": "group commit, every write verified",
+        "source": "group-commit",
         "kiban": unit(kiban),
         "rivals": rivals,
     }

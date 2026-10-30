@@ -62,7 +62,9 @@ function Readout({
   const [ch, setCh] = useState(8);
   useLayoutEffect(() => {
     // One braille cell's width, measured in the plot's own font.
-    if (probe.current) setCh(probe.current.getBoundingClientRect().width / 10);
+    // A hidden readout measures zero, which would poison every coordinate.
+    const measured = probe.current?.getBoundingClientRect().width;
+    if (measured) setCh(measured / 10);
   }, [width]);
 
   const len = raceLength(id);

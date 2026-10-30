@@ -169,6 +169,7 @@ test("every benchmark row carries its commit and paired evidence", () => {
     assert.ok(cells.length, row.id);
     for (const cell of cells) {
       assert.equal(cell.trials, 5, row.id);
+      assert.equal(cell.runs.length, 5, row.id);
       assert.ok(cell.min <= cell.ratio && cell.ratio <= cell.max, row.id);
     }
   }

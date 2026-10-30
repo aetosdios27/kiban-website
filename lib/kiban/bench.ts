@@ -12,6 +12,8 @@ export type Comparison = {
   min: number;
   max: number;
   trials: number;
+  /** One [kiban, rival] pair per trial, in the row's unit. */
+  runs: [number, number][];
 };
 type Latency = { p50: number; p99: number };
 type Throughput = { ops: number; p99: number };
@@ -22,6 +24,7 @@ export type Row =
       group: string;
       label: string;
       detail: string;
+      source: string;
       kiban: Latency;
       rivals: Partial<Record<Rival, RivalCell<Latency>>>;
     }
@@ -30,6 +33,7 @@ export type Row =
       group: string;
       label: string;
       detail: string;
+      source: string;
       kiban: Throughput;
       rivals: Partial<Record<Rival, RivalCell<Throughput>>>;
     };
@@ -89,6 +93,18 @@ export const BENCHMARK = {
   archiveLabel: "The v0.1.0 throughput comparison",
   archiveUrl: `${ENGINE_REPO}/blob/main/validation/COMPARISON.md`,
 };
+
+export const RECEIPT = {
+  host: "Core Ultra 9 185H, mains, performance profile, shared",
+  rerun: {
+    latency: "taskset -c 12-21 python3 validation/site-refresh/campaign.py",
+    throughput: "python3 validation/site-refresh/group_commit.py",
+  },
+  folder: `${ENGINE_REPO}/tree/main/validation/site-refresh`,
+};
+
+const LIGHT_M_PER_US = 299.792458;
+export const lightMetres = (us: number) => Math.round(us * LIGHT_M_PER_US);
 
 export const headlines = [
   {

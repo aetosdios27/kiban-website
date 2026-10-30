@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import {
   BENCHMARK,
+  RECEIPT,
+  benchCommit,
+  fmtFull,
   fmtOps,
   fmtRatio,
   fmtUs,
@@ -21,7 +24,90 @@ import {
 
 const DOUBLINGS = 3; // each half spans 1× to 8×
 
-function Cells({ row, rival, name }: { row: Row; rival: Rival; name: string }) {
+function Receipt({
+  row,
+  rival,
+  name,
+}: {
+  row: Row;
+  rival: Rival;
+  name: string;
+}) {
+  const theirs = row.rivals[rival];
+  if (!theirs) return null;
+  const throughput = isThroughput(row);
+  const peak = Math.max(...theirs.runs.flat());
+  const show = (n: number) => (throughput ? fmtFull(n) : fmtUs(n));
+  return (
+    <tr className="rc-row">
+      <td colSpan={4}>
+        <div className="rc">
+          <p className="rc-head">
+            <span>receipt</span>
+            <span>
+              {theirs.trials} trials, {throughput ? "writes/s" : "p50"}, kiban
+              then {name}
+            </span>
+          </p>
+          {theirs.runs.map(([mine, other], i) => (
+            <div key={i} className="rc-trial">
+              <span>r{i + 1}</span>
+              <i
+                className="rc-bar"
+                style={{ width: `${(mine / peak) * 100}%` }}
+              />
+              <b>{show(mine)}</b>
+              <i
+                className="rc-bar rc-other"
+                style={{ width: `${(other / peak) * 100}%` }}
+              />
+              <span>{show(other)}</span>
+              <em>{(throughput ? mine / other : other / mine).toFixed(2)}×</em>
+            </div>
+          ))}
+          <dl className="rc-meta">
+            <div>
+              <dt>commit</dt>
+              <dd>{benchCommit.slice(0, 8)}</dd>
+            </div>
+            <div>
+              <dt>host</dt>
+              <dd>{RECEIPT.host}</dd>
+            </div>
+            <div>
+              <dt>rerun</dt>
+              <dd>
+                <code>
+                  ${" "}
+                  {throughput
+                    ? RECEIPT.rerun.throughput
+                    : RECEIPT.rerun.latency}
+                </code>
+              </dd>
+            </div>
+          </dl>
+          <a className="read-link" href={`${RECEIPT.folder}/${row.source}`}>
+            Open the raw results
+          </a>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function Cells({
+  row,
+  rival,
+  name,
+  open,
+  onToggle,
+}: {
+  row: Row;
+  rival: Rival;
+  name: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
   const theirs = row.rivals[rival];
   if (!theirs) return null;
   const even = isEven(theirs);
@@ -61,15 +147,19 @@ function Cells({ row, rival, name }: { row: Row; rival: Rival; name: string }) {
               />
             )}
           </span>
-          <span
+          <button
+            type="button"
             className="sb-verdict"
+            aria-expanded={open}
+            onClick={onToggle}
             data-ahead={(!even && ahead) || undefined}
             title={`${theirs.trials} paired trials against ${name}, ratios ${theirs.min} to ${theirs.max}; above 1 favors kiban`}
           >
             {even
               ? "even"
               : `${fmtRatio(theirs.ratio)} ${ahead ? "faster" : "slower"}`}
-          </span>
+            <span aria-hidden="true"> {open ? "▴" : "▾"}</span>
+          </button>
         </div>
       </td>
     </>
@@ -78,6 +168,7 @@ function Cells({ row, rival, name }: { row: Row; rival: Rival; name: string }) {
 
 export function Scoreboard() {
   const [rival, setRival] = useState<Rival>("rocksdb");
+  const [opened, setOpened] = useState<string | null>(null);
   const { name } = rivals.find((r) => r.key === rival)!;
   return (
     <>
@@ -128,13 +219,26 @@ export function Scoreboard() {
             {rows
               .filter((row) => row.group === group && row.rivals[rival])
               .map((row) => (
-                <tr key={row.id}>
-                  <th scope="row">
-                    {row.label}
-                    <small>{row.detail}</small>
-                  </th>
-                  <Cells row={row} rival={rival} name={name} />
-                </tr>
+                <Fragment key={row.id}>
+                  <tr>
+                    <th scope="row">
+                      {row.label}
+                      <small>{row.detail}</small>
+                    </th>
+                    <Cells
+                      row={row}
+                      rival={rival}
+                      name={name}
+                      open={opened === row.id}
+                      onToggle={() =>
+                        setOpened(opened === row.id ? null : row.id)
+                      }
+                    />
+                  </tr>
+                  {opened === row.id && (
+                    <Receipt row={row} rival={rival} name={name} />
+                  )}
+                </Fragment>
               ))}
           </tbody>
         ))}

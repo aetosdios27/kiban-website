@@ -49,7 +49,8 @@ function Readout({
   const dragging = useRef(false);
   const [ch, setCh] = useState(8);
   useLayoutEffect(() => {
-    if (probe.current) setCh(probe.current.getBoundingClientRect().width / 10);
+    const measured = probe.current?.getBoundingClientRect().width;
+    if (measured) setCh(measured / 10);
   }, [width]);
 
   const cols = Math.max(20, Math.floor(width / ch) - GUTTER);
