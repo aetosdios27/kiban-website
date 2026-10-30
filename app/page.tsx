@@ -15,6 +15,7 @@ import {
   getInstall,
   heroStatement,
 } from "@/lib/kiban/facts";
+import { LibraryTeaser } from "@/components/kiban/library-teaser";
 import { Status } from "@/components/kiban/status";
 import { ArrowDown } from "pixelarticons/react";
 
@@ -97,6 +98,7 @@ export default async function Home() {
       </section>
       <ArchitectureDiagram />
       <Status facts={facts} />
+      <LibraryTeaser />
     </main>
   );
 }

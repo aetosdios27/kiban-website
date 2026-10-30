@@ -11,6 +11,7 @@ const columns = [
       ["guarantees", "/#guarantees", false],
       ["benchmarks", "/#benchmarks", false],
       ["internals", "/#write-path", false],
+      ["library", "/library", false],
     ],
   },
   {

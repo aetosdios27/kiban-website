@@ -7,6 +7,7 @@ const links = [
   ["guarantees", "/#guarantees"],
   ["benchmarks", "/#benchmarks"],
   ["internals", "/#write-path"],
+  ["library", "/library"],
 ] as const;
 
 export function SiteHeader() {

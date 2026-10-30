@@ -1,4 +1,5 @@
-import { ExternalLink } from "pixelarticons/react";
+import Link from "next/link";
+import { ArrowRight } from "pixelarticons/react";
 import { BENCHMARK, headlines, losses, unmeasured } from "@/lib/kiban/bench";
 import { Race } from "./bench/race";
 import { Scoreboard } from "./bench/scoreboard";
@@ -100,14 +101,14 @@ export function VersusField() {
 
       <div className="section-foot">
         <p>{BENCHMARK.context}</p>
-        <a className="read-link" href={BENCHMARK.url}>
+        <Link className="read-link" href={BENCHMARK.url}>
           Methodology and raw results{" "}
-          <ExternalLink className="icon icon-ext" aria-hidden="true" />
-        </a>
-        <a className="read-link" href={BENCHMARK.archiveUrl}>
+          <ArrowRight className="icon" aria-hidden="true" />
+        </Link>
+        <Link className="read-link" href={BENCHMARK.archiveUrl}>
           {BENCHMARK.archiveLabel}{" "}
-          <ExternalLink className="icon icon-ext" aria-hidden="true" />
-        </a>
+          <ArrowRight className="icon" aria-hidden="true" />
+        </Link>
       </div>
     </section>
   );

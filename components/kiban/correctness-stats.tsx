@@ -2,12 +2,12 @@ import {
   FACT_COPY,
   evidenceFraming,
   getCorrectnessResults,
-  sourceUrl,
   type Facts,
 } from "@/lib/kiban/facts";
 import { RollingStat } from "./rolling-stat";
 import { SectionHead } from "./section-head";
-import { ExternalLink } from "pixelarticons/react";
+import Link from "next/link";
+import { ArrowRight } from "pixelarticons/react";
 
 export function CorrectnessStats({ facts }: { facts: Facts }) {
   const results = getCorrectnessResults(facts).slice(0, 6);
@@ -43,13 +43,10 @@ export function CorrectnessStats({ facts }: { facts: Facts }) {
         <p>
           {evidenceFraming(facts)} {FACT_COPY.honesty}
         </p>
-        <a
-          className="read-link"
-          href={sourceUrl(facts, "validation/CORRECTNESS.md")}
-        >
-          Read the validation report{" "}
-          <ExternalLink className="icon icon-ext" aria-hidden="true" />
-        </a>
+        <Link className="read-link" href="/library/correctness">
+          Read the repair report{" "}
+          <ArrowRight className="icon" aria-hidden="true" />
+        </Link>
       </div>
     </section>
   );
