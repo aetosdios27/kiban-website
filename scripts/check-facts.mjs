@@ -109,7 +109,7 @@ test("strongest sweep and nonzero nightly evidence lead before library tests", (
   assert.equal(results[1].value, "10M");
   assert.match(results[1].label, /shared.*pass/);
   assert.equal(results[2].label, "Nightly seeds, total");
-  assert.equal(results[3].value, "328");
+  assert.equal(results[3].value, String(snapshot.tests.lib_tests));
 });
 
 test("loader uses the hourly fetch option and falls back on every boundary failure", async () => {
