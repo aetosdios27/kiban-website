@@ -87,7 +87,7 @@ export const BENCHMARK = {
   introduction: `One agent-memory workload on four engines at kiban commit ${benchRef}: warm cache, one worker, every result checked. kiban leads warm reads, keeps pace on durable writes, and gives up disk and memory to do it.`,
   caption:
     "Median latency or throughput of kiban and the selected engine per workload, with p99 and the paired ratio between them.",
-  context: `One shared laptop on mains power: Intel Core Ultra 9 185H, NVMe behind LUKS, Linux 7.2. A memory record is a JSON value with 200 bytes of text, across 64 agents. Reads ran on one pinned core, five rotated trials per engine. kiban ran with its agent_memory settings, RocksDB with the winner of its published screen, and SQLite with its fastest read row. These runs are unreleased main, not v0.1.0, and say nothing about larger-than-memory or cold-storage performance.`,
+  context: `One shared laptop on mains power: Intel Core Ultra 9 185H, NVMe behind LUKS, Linux 7.2. A memory record is a JSON value with 200 bytes of text, across 64 agents. Reads ran on one pinned core, five rotated trials per engine. kiban ran with its agent_memory settings, RocksDB with the winner of its published screen, and SQLite with its fastest read row. These runs use the engine code released as v0.2.0, and say nothing about larger-than-memory or cold-storage performance.`,
   url: "/library/the-field",
   archiveLabel: "The v0.1.0 throughput comparison",
   archiveUrl: "/library/v0-1-comparison",
