@@ -73,7 +73,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${monaSans.variable} ${departureMono.variable} ${commitMono.variable}`}
+      className={`dark ${monaSans.variable} ${departureMono.variable} ${commitMono.variable}`}
       suppressHydrationWarning
     >
       <body>
