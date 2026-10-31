@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   pageScrollTarget,
   scrollPage,
-  setScrollGate,
+  addScrollGate,
 } from "@/components/layout/smooth-scroll";
 import { fmtOps } from "@/lib/kiban/bench";
 import { cue } from "@/lib/kiban/sound";
@@ -261,7 +261,7 @@ export function TreeScene() {
       cue(moment.failure ? "error" : "tap", { emphasis: "subtle" });
     };
 
-    setScrollGate(({ deltaY, event }) => {
+    const off = addScrollGate(({ deltaY, event }) => {
       const el = root.current;
       if (!el?.offsetHeight || !(event instanceof WheelEvent) || event.ctrlKey)
         return true;
@@ -373,7 +373,7 @@ export function TreeScene() {
     frame = requestAnimationFrame(draw);
     return () => {
       cancelAnimationFrame(frame);
-      setScrollGate(null);
+      off();
     };
   }, []);
 

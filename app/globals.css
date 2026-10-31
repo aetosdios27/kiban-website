@@ -2046,82 +2046,60 @@ main {
   position: sticky;
   top: 112px;
   align-self: start;
-  max-height: calc(100vh - 136px);
-  overflow: hidden;
 }
 .lens ol {
   position: relative;
-  margin: 0 0 14px;
+  margin: 0 0 18px;
   padding: 0;
   list-style: none;
 }
-.lens-needle {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1;
-  width: 60px;
-  height: 2px;
-  background: var(--primary);
-  box-shadow: 0 0 10px rgb(255 226 74 / 0.6);
-  pointer-events: none;
-  transition: transform 0.22s cubic-bezier(0.3, 1.5, 0.5, 1);
-}
 .lens li {
-  position: relative;
-  background: repeating-linear-gradient(
-      to bottom,
-      #2c2c2c 0 1px,
-      transparent 1px 6px
-    )
-    0 0 / 7px 100% no-repeat;
+  --scale: 1;
+  --tone: 0.3;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 0;
 }
 .lens a {
   position: absolute;
-  inset: 0;
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  color: #6f6f6f;
-  text-decoration: none;
+  top: -3px;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: 7px;
 }
 .lens i {
-  flex: none;
-  height: 2px;
-  margin-top: 0;
-  background: #5a5a5a;
-  transition:
-    background 0.2s ease,
-    transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
+  display: block;
+  height: 1.5px;
+  margin-top: 3px;
+  background: #fff;
+  opacity: var(--tone);
+  transform: scaleX(var(--scale));
   transform-origin: left;
+  will-change: transform;
 }
-.lens li:hover i {
-  background: var(--foreground);
-  transform: scaleX(1.18);
+.lens li[data-depth="3"] i {
+  height: 1px;
 }
-.lens a span {
-  overflow: hidden;
-  margin-top: -7px;
-  font-size: 13px;
-  line-height: 16px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  opacity: 0;
-  transform: translateX(-6px);
-  transition:
-    opacity 0.2s ease,
-    transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1),
-    color 0.2s ease;
-}
-.lens:hover a span {
-  opacity: 0.75;
-  transform: none;
-}
-.lens li:hover a span,
-.lens li[data-on] a span {
-  color: var(--foreground);
+.lens li[data-on] i {
   opacity: 1;
-  transform: none;
+}
+.lens-name {
+  position: absolute;
+  top: -8px;
+  left: 118px;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-start;
+  width: 166px;
+  overflow: hidden;
+  text-align: left;
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+  color: var(--foreground);
+  pointer-events: none;
 }
 .lens-left {
   font: 12px var(--font-mono);

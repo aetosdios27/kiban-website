@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { scrollPage } from "@/components/layout/smooth-scroll";
 
 // Every article opens at its start, including on the way back.
 export function ScrollReset() {
@@ -13,7 +14,7 @@ export function ScrollReset() {
     };
   }, []);
   useEffect(() => {
-    if (!location.hash) scrollTo({ top: 0, behavior: "instant" });
+    if (!location.hash) scrollPage(0);
   }, [pathname]);
   return null;
 }

@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { addScrollGate, scrollPage } from "@/components/layout/smooth-scroll";
 import { iso, type Pt } from "@/lib/kiban/iso";
 
 // The drafting kit behind the library's figures: one projection, hatched
@@ -192,8 +193,7 @@ export function Scene({
       const seat = Math.max(84, (innerHeight - h) / 2);
       // Once the figure reaches its seat it stays there until it has played.
       if (delta > 0 && target < 1 && top - delta < seat && top > -h / 2) {
-        if (Math.abs(top - seat) > 1)
-          scrollBy({ top: top - seat, behavior: "instant" });
+        if (Math.abs(top - seat) > 1) scrollPage(scrollY + top - seat);
         advance(delta);
         return true;
       }
@@ -203,9 +203,7 @@ export function Scene({
       }
       return false;
     };
-    const onWheel = (e: WheelEvent) => {
-      if (hold(e.deltaY)) e.preventDefault();
-    };
+    let release: (() => void) | null = null;
     const onTouchStart = (e: TouchEvent) => {
       touch = e.touches[0].clientY;
     };
@@ -222,11 +220,15 @@ export function Scene({
     };
     const watch = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
-        addEventListener("wheel", onWheel, { passive: false });
+        release = addScrollGate(({ deltaY, event }) => {
+          if (!(event instanceof WheelEvent) || !hold(deltaY)) return true;
+          event.preventDefault();
+          return false;
+        });
         addEventListener("touchstart", onTouchStart, { passive: true });
         addEventListener("touchmove", onTouchMove, { passive: false });
       } else {
-        removeEventListener("wheel", onWheel);
+        release?.();
         removeEventListener("touchstart", onTouchStart);
         removeEventListener("touchmove", onTouchMove);
         finishIfPassed();
@@ -235,7 +237,7 @@ export function Scene({
     watch.observe(el);
     return () => {
       watch.disconnect();
-      removeEventListener("wheel", onWheel);
+      release?.();
       removeEventListener("touchstart", onTouchStart);
       removeEventListener("touchmove", onTouchMove);
       cancelAnimationFrame(frame);

@@ -1,20 +1,29 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Morph } from "@/components/kiban/bench/morph";
+import {
+  addScrollGate,
+  pageScrollTarget,
+} from "@/components/layout/smooth-scroll";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import type { Heading } from "@/lib/library/document";
-import { cue } from "@/lib/kiban/sound";
 
-// A lens barrel on its side. Each section is a major tick whose length is that
-// section's length, with minor ticks between. The needle rides the barrel and
-// falls into a detent at every heading, like a zoom ring clicking into place.
+// A miniature of the article. Every heading is a line at its true position,
+// as long as its own title. A tight bulge rides the reading position, like the
+// Dock under a pointer, and the wheel grows heavy passing each heading.
 
 const WORDS_PER_MINUTE = 220;
 const HEADER = 96;
-const DETENT = 0.14; // the share of a section on each side that pulls the needle in
+const RAIL_VH = 0.62;
+const MIN_GAP = 5;
+const REACH = 22; // how far the bulge spreads, in rail pixels
+const SWELL = 0.9;
+const DRAG = 0.8; // wheel lost at the centre of a detent
+const DRAG_PX = 70; // page distance over which a heading is felt
 
-const settle = (f: number) =>
-  Math.min(1, Math.max(0, (f - DETENT) / (1 - DETENT * 2)));
+const lineWidth = (h: Heading) =>
+  Math.min(56, 8 + h.text.length * 0.85) * (h.depth === 3 ? 0.72 : 1);
 
 export function Contents({
   headings,
@@ -27,105 +36,145 @@ export function Contents({
     () => headings.filter((h) => h.depth === 2),
     [headings],
   );
-  const rows = useRef<(HTMLLIElement | null)[]>([]);
-  const needle = useRef<HTMLSpanElement>(null);
+  const rail = useRef<HTMLOListElement>(null);
+  const lines = useRef<(HTMLElement | null)[]>([]);
+  const label = useRef<HTMLParagraphElement>(null);
+  const pointer = useRef<number | null>(null);
   const [active, setActive] = useState(0);
-  const [lengths, setLengths] = useState<number[]>(() => sections.map(() => 1));
+  const [hovered, setHovered] = useState<number | null>(null);
   const [left, setLeft] = useState(Math.ceil(words / WORDS_PER_MINUTE));
 
   useEffect(() => {
     let tops: number[] = [];
-    let end = 0;
+    let ys: number[] = [];
+    let start = 0;
+    let end = 1;
+    let height = 0;
     let frame = 0;
     let current = -1;
+
     const measure = () => {
-      tops = sections.map(
-        (s) =>
-          (document.getElementById(s.id)?.getBoundingClientRect().top ?? 0) +
+      tops = headings.map(
+        (h) =>
+          (document.getElementById(h.id)?.getBoundingClientRect().top ?? 0) +
           scrollY,
       );
+      start = tops[0] ?? 0;
       end =
         (document.querySelector(".lib-prose")?.getBoundingClientRect().bottom ??
-          0) + scrollY;
-      setLengths(tops.map((top, i) => (tops[i + 1] ?? end) - top));
+          1) + scrollY;
+      height = innerHeight * RAIL_VH;
+      ys = tops.map((top) => ((top - start) / (end - start)) * height);
+      for (let i = 1; i < ys.length; i++)
+        ys[i] = Math.max(ys[i], ys[i - 1] + MIN_GAP);
+      const overflow = (ys.at(-1) ?? 0) / height;
+      if (overflow > 1) ys = ys.map((y) => y / overflow);
+      if (rail.current) rail.current.style.height = `${height}px`;
+      lines.current.forEach((line, i) => {
+        if (line) line.style.top = `${ys[i]}px`;
+      });
     };
-    const read = () => {
+
+    const paint = () => {
       frame = 0;
       const at = scrollY + HEADER + 2;
       let index = 0;
       tops.forEach((top, i) => {
         if (top <= at) index = i;
       });
-      const row = rows.current[index];
-      if (!row || !needle.current) return;
-      const span = (tops[index + 1] ?? end) - tops[index];
-      const f = Math.max(0, (at - tops[index]) / span);
-      const y = row.offsetTop + settle(f) * row.offsetHeight;
-      needle.current.style.transform = `translateY(${y.toFixed(1)}px)`;
+      const next = tops[index + 1] ?? end;
+      const f = Math.min(
+        1,
+        Math.max(0, (at - tops[index]) / (next - tops[index])),
+      );
+      const reading = ys[index] + f * ((ys[index + 1] ?? height) - ys[index]);
+      const centre = pointer.current ?? reading;
+      lines.current.forEach((line, i) => {
+        if (!line) return;
+        const near = Math.exp(-(((ys[i] - centre) / REACH) ** 2));
+        line.style.setProperty("--scale", (1 + near * SWELL).toFixed(3));
+        line.style.setProperty("--tone", (0.3 + near * 0.7).toFixed(3));
+      });
+      if (label.current)
+        label.current.style.transform = `translateY(${centre.toFixed(1)}px)`;
       if (index !== current) {
-        if (current !== -1) {
-          cue("tap", { emphasis: "subtle" });
-          row.animate(
-            [
-              { transform: "translateX(0)" },
-              { transform: "translateX(3px)" },
-              { transform: "translateX(0)" },
-            ],
-            { duration: 180, easing: "ease-out" },
-          );
-        }
         current = index;
         setActive(index);
       }
-      const done = Math.min(1, Math.max(0, (at - tops[0]) / (end - tops[0])));
+      const done = Math.min(1, Math.max(0, (at - start) / (end - start)));
       setLeft(Math.ceil(((1 - done) * words) / WORDS_PER_MINUTE));
     };
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(read);
+    const request = () => {
+      if (!frame) frame = requestAnimationFrame(paint);
     };
+
+    const off = addScrollGate((data) => {
+      const line = pageScrollTarget() + HEADER + 2;
+      const gap = Math.min(...tops.map((top) => Math.abs(top - line)));
+      data.deltaY *= 1 - DRAG * Math.exp(-((gap / DRAG_PX) ** 2));
+      return true;
+    });
+
+    const list = rail.current;
+    const onMove = (e: PointerEvent) => {
+      if (!list) return;
+      pointer.current = e.clientY - list.getBoundingClientRect().top;
+      request();
+    };
+    const onLeave = () => {
+      pointer.current = null;
+      setHovered(null);
+      request();
+    };
+    list?.addEventListener("pointermove", onMove);
+    list?.addEventListener("pointerleave", onLeave);
+
     measure();
-    onScroll();
+    request();
     const sizes = new ResizeObserver(() => {
       measure();
-      onScroll();
+      request();
     });
     sizes.observe(document.body);
-    addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("scroll", request, { passive: true });
     return () => {
+      off();
       sizes.disconnect();
-      removeEventListener("scroll", onScroll);
+      removeEventListener("scroll", request);
+      list?.removeEventListener("pointermove", onMove);
+      list?.removeEventListener("pointerleave", onLeave);
       cancelAnimationFrame(frame);
     };
-  }, [sections, words]);
+  }, [headings, words]);
 
   if (!sections.length) return <div />;
-  const longest = Math.max(...lengths, 1);
+  const named = headings[hovered ?? active];
   return (
     <>
       <nav className="lens" aria-label="On this page">
-        <ol>
-          <span ref={needle} className="lens-needle" aria-hidden="true" />
-          {sections.map((section, i) => {
-            const share = Math.sqrt(lengths[i] / longest);
-            return (
-              <li
-                key={section.id}
-                ref={(el) => {
-                  rows.current[i] = el;
-                }}
-                data-on={i === active || undefined}
-                style={{ height: 26 + share * 34 }}
+        <ol ref={rail}>
+          <p ref={label} className="lens-name" aria-hidden="true">
+            <Morph value={named?.text ?? ""} duration={260} />
+          </p>
+          {headings.map((heading, i) => (
+            <li
+              key={heading.id}
+              ref={(el) => {
+                lines.current[i] = el;
+              }}
+              data-depth={heading.depth}
+              data-on={i === active || undefined}
+              onPointerEnter={() => setHovered(i)}
+            >
+              <a
+                href={`#${heading.id}`}
+                aria-label={heading.text}
+                aria-current={i === active ? "location" : undefined}
               >
-                <a
-                  href={`#${section.id}`}
-                  aria-current={i === active ? "location" : undefined}
-                >
-                  <i style={{ width: 12 + share * 40 }} aria-hidden="true" />
-                  <span>{section.text}</span>
-                </a>
-              </li>
-            );
-          })}
+                <i style={{ width: lineWidth(heading) }} aria-hidden="true" />
+              </a>
+            </li>
+          ))}
         </ol>
         <p className="lens-left">{left} min left</p>
       </nav>
