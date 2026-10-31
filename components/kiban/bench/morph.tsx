@@ -7,14 +7,17 @@ import { useEffect, useRef, useState } from "react";
 export function Morph({
   value,
   duration = 520,
+  prose = false,
 }: {
   value: string;
   duration?: number;
+  /** Long sentences: Scritto holds one line, so narrow screens get plain text. */
+  prose?: boolean;
 }) {
   return (
     <>
-      <span className="visually-hidden">{value}</span>
-      <span aria-hidden="true">
+      <span className={prose ? "morph-plain" : "visually-hidden"}>{value}</span>
+      <span aria-hidden="true" className={prose ? "morph-live" : undefined}>
         <Scritto
           value={value}
           trend={0}

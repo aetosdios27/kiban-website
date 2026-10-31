@@ -396,6 +396,7 @@ export function Race() {
 
       <p className="tr-meta">
         <Morph
+          prose
           value={`${race.detail}. Operations completed over time; the finish line is ${fmtOps(run(id, "kiban").operations)}.`}
         />
       </p>
@@ -422,6 +423,7 @@ export function Race() {
           />
         </span>{" "}
         <Morph
+          prose
           value={`${stalled > 0 ? `kiban stalled for ${stalled} separate seconds with no completed writes. ` : ""}${race.note}`}
         />
       </p>

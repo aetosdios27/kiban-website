@@ -105,7 +105,7 @@ export function GroupCommitFigure() {
             />
             <Note
               at={iso(o, 366, 206, 22)}
-              to={[340, 560]}
+              to={[190, 720]}
               title="one queue"
               body="a leader takes the group"
               show={gather}
@@ -119,7 +119,7 @@ export function GroupCommitFigure() {
             />
             <Note
               at={iso(o, 895, 220, 18)}
-              to={[770, 560]}
+              to={[1090, 800]}
               title="then visible"
               body="nothing shows before the sync"
               show={publish}
@@ -478,7 +478,7 @@ export function PrefixFigure() {
         const zAt = (l: number) => 380 - l * gap;
         const lit = Math.round(light * 10);
         const start = iso(o, 240, 40, 420);
-        const first = iso(o, 90, 150, zAt(1) + 22);
+        const first = iso(o, 32, 164, zAt(1) - 54);
         return (
           <>
             {LEVELS.toReversed().map((l) => (
@@ -535,7 +535,7 @@ export function PrefixFigure() {
                 tone={i === 4 ? "solid" : "ghost"}
               />
             ))}
-            <Beam from={start} to={[first[0], first[1] - 70]} at={drop} />
+            <Beam from={start} to={first} at={drop} />
             <Note
               at={iso(o, 400, 10, 438)}
               to={[730, 90]}
@@ -551,7 +551,7 @@ export function PrefixFigure() {
               show={open}
             />
             <Note
-              at={[first[0], first[1] - 70]}
+              at={first}
               to={[640, 590]}
               title={`latest ${lit}`}
               body="one contiguous run"

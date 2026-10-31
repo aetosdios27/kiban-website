@@ -43,6 +43,7 @@ export function AskAi() {
                 : "opens with a prompt to explain kiban"
             }
             duration={420}
+            prose
           />
         </span>
       </p>

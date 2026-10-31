@@ -417,7 +417,7 @@ export function EngineStrata() {
       </svg>
       {/* On phones the SVG ticker would be too small; the same line, as text. */}
       <p className="strata-caption" aria-hidden="true">
-        <Morph value={narrate(t, version)} duration={320} />
+        <Morph value={narrate(t, version)} duration={320} prose />
       </p>
     </>
   );

@@ -2092,6 +2092,7 @@ main {
 }
 .lib-prose {
   min-width: 0;
+  overflow-wrap: anywhere;
   max-width: 760px;
   font-size: 18px;
   line-height: 1.7;
@@ -2422,6 +2423,29 @@ main {
   grid-column: 2;
   font: 11.5px / 1.4 var(--font-mono);
   color: var(--muted-foreground);
+}
+
+/* Long morphing sentences stay animated where they fit on one line. */
+.morph-plain {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (max-width: 900px) {
+  .morph-plain {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+  }
+  .morph-live {
+    display: none;
+  }
 }
 
 /* License page */
