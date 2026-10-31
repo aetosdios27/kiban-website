@@ -2176,7 +2176,6 @@ main {
   border-top: 1px solid var(--border);
   font: 800 34px / 1.1 var(--font-sans);
   color: var(--foreground);
-  scroll-margin-top: 96px;
   counter-increment: section;
 }
 .lib-prose h2::before {
@@ -2190,7 +2189,6 @@ main {
   margin-block: var(--s-6) 12px;
   font: 700 22px / 1.2 var(--font-sans);
   color: var(--foreground);
-  scroll-margin-top: 96px;
 }
 .lib-prose h4 {
   margin-block: var(--s-4) 8px;
