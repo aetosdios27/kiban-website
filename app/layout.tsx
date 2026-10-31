@@ -74,6 +74,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${monaSans.variable} ${departureMono.variable} ${commitMono.variable}`}
+      suppressHydrationWarning
     >
       <body>
         <SmoothScroll />
