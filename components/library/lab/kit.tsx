@@ -123,6 +123,7 @@ export function Note({
 }
 
 const PAD = 44;
+const PLAY_PX = 900; // wheel travel that plays a figure start to finish
 
 function Mark({ x, y }: { x: number; y: number }) {
   return (
@@ -164,42 +165,79 @@ export function Scene({
   }, []);
 
   useEffect(() => {
-    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let frame = 0;
+    const el = ref.current;
+    if (!el) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const frame = requestAnimationFrame(() => setP(1));
+      return () => cancelAnimationFrame(frame);
+    }
+    let target = 0;
     let current = 0;
-    const tick = () => {
+    let frame = 0;
+    let touch = 0;
+    const animate = () => {
       frame = 0;
-      const el = ref.current;
-      if (!el) return;
-      const { top, height: h } = el.getBoundingClientRect();
-      // Complete once the figure's centre reaches the upper third of the screen.
-      const target = still
-        ? 1
-        : Math.min(
-            1,
-            Math.max(
-              0,
-              (innerHeight * 0.92 - top) / (innerHeight * 0.62 + h * 0.5),
-            ),
-          );
-      current += (target - current) * (still ? 1 : 0.14);
-      if (Math.abs(target - current) < 0.0006) current = target;
+      current += (target - current) * 0.16;
+      if (Math.abs(target - current) < 0.001) current = target;
       setP(current);
-      if (current !== target) frame = requestAnimationFrame(tick);
+      if (current !== target) frame = requestAnimationFrame(animate);
     };
-    const wake = () => {
-      if (!frame) frame = requestAnimationFrame(tick);
+    const advance = (delta: number) => {
+      target = Math.min(1, Math.max(0, target + delta / PLAY_PX));
+      if (!frame) frame = requestAnimationFrame(animate);
+    };
+    /** Holds the page while the figure plays. True when it took the input. */
+    const hold = (delta: number) => {
+      const { top, height: h } = el.getBoundingClientRect();
+      const seat = Math.max(84, (innerHeight - h) / 2);
+      // Once the figure reaches its seat it stays there until it has played.
+      if (delta > 0 && target < 1 && top - delta < seat && top > -h / 2) {
+        if (Math.abs(top - seat) > 1)
+          scrollBy({ top: top - seat, behavior: "instant" });
+        advance(delta);
+        return true;
+      }
+      if (delta < 0 && target > 0 && target < 1 && Math.abs(top - seat) < 3) {
+        advance(delta);
+        return true;
+      }
+      return false;
+    };
+    const onWheel = (e: WheelEvent) => {
+      if (hold(e.deltaY)) e.preventDefault();
+    };
+    const onTouchStart = (e: TouchEvent) => {
+      touch = e.touches[0].clientY;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      const y = e.touches[0].clientY;
+      if (hold(touch - y)) e.preventDefault();
+      touch = y;
+    };
+    const finishIfPassed = () => {
+      if (el.getBoundingClientRect().bottom < 0 && target < 1) {
+        target = 1;
+        if (!frame) frame = requestAnimationFrame(animate);
+      }
     };
     const watch = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
-        addEventListener("scroll", wake, { passive: true });
-        wake();
-      } else removeEventListener("scroll", wake);
+        addEventListener("wheel", onWheel, { passive: false });
+        addEventListener("touchstart", onTouchStart, { passive: true });
+        addEventListener("touchmove", onTouchMove, { passive: false });
+      } else {
+        removeEventListener("wheel", onWheel);
+        removeEventListener("touchstart", onTouchStart);
+        removeEventListener("touchmove", onTouchMove);
+        finishIfPassed();
+      }
     });
-    if (ref.current) watch.observe(ref.current);
+    watch.observe(el);
     return () => {
       watch.disconnect();
-      removeEventListener("scroll", wake);
+      removeEventListener("wheel", onWheel);
+      removeEventListener("touchstart", onTouchStart);
+      removeEventListener("touchmove", onTouchMove);
       cancelAnimationFrame(frame);
     };
   }, []);
@@ -292,6 +330,9 @@ export function Scene({
         </g>
         {children(p)}
       </svg>
+      <span className="lx-play" aria-hidden="true">
+        <i style={{ transform: `scaleX(${p})` }} />
+      </span>
       <figcaption className="lx-block">
         <b>fig. {fig}</b>
         <span>{title}</span>

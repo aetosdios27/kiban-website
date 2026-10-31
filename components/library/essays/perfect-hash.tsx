@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { rows } from "@/lib/kiban/bench";
+import { NextRead } from "../next-read";
 import { Term } from "../term";
 import { Bars, Mark, Story } from "./kit";
 import { TraceFigure } from "./trace";
@@ -189,6 +190,7 @@ export function PerfectHashEssay() {
           </Link>
         </aside>
       </div>
+      <NextRead slug="perfect-hash" />
     </main>
   );
 }

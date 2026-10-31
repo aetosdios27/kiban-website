@@ -6,7 +6,8 @@ import { Contents } from "@/components/library/contents";
 import { LIBRARY_FIGURES } from "@/components/library/figures";
 import { Fold } from "@/components/library/fold";
 import { Term } from "@/components/library/term";
-import { CATALOG, shelfFor } from "@/lib/library/catalog";
+import { NextRead } from "@/components/library/next-read";
+import { shelfFor } from "@/lib/library/catalog";
 import { libraryCommit, type loadDocument } from "@/lib/library/document";
 
 const FOLD_AFTER = 12;
@@ -35,7 +36,7 @@ function TableSlot({
   if (rows > FOLD_AFTER) return <Fold rows={rows}>{children}</Fold>;
   return (
     <div className="lib-table" data-open>
-      <div className="lib-table-scroll">{children}</div>
+      {children}
     </div>
   );
 }
@@ -56,7 +57,6 @@ export function DocumentView({ doc, essay }: { doc: Loaded; essay?: string }) {
       "table-slot": TableSlot,
     } as never,
   });
-  const next = CATALOG[(CATALOG.indexOf(entry) + 1) % CATALOG.length];
   return (
     <main id="main-content" className="lib-doc">
       <header className="lib-doc-head page-width">
@@ -82,13 +82,7 @@ export function DocumentView({ doc, essay }: { doc: Loaded; essay?: string }) {
         <Contents headings={headings} words={words} />
         <article className="lib-prose">{body}</article>
       </div>
-      <footer className="lib-next page-width">
-        <p>next read</p>
-        <Link href={`/library/${next.slug}`}>
-          {next.title[0]} <span className="px">{next.title[1]}</span>
-        </Link>
-        <small>{next.dek}</small>
-      </footer>
+      <NextRead slug={entry.slug} />
     </main>
   );
 }

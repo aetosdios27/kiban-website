@@ -13,7 +13,7 @@ export function Fold({
   const [open, setOpen] = useState(false);
   return (
     <div className="lib-table" data-open={open || undefined}>
-      <div className="lib-table-scroll">{children}</div>
+      {children}
       <button type="button" className="lib-fold" onClick={() => setOpen(!open)}>
         {open ? "show fewer rows" : `show all ${rows} rows`}
       </button>

@@ -203,6 +203,18 @@ function shapeTable(table: Element) {
   );
   const cells = (row: Element) =>
     row.children.filter((c): c is Element => c.type === "element");
+  const head = table.children.find(
+    (c): c is Element => c.type === "element" && c.tagName === "thead",
+  );
+  const headRow = head?.children.find(
+    (c): c is Element => c.type === "element" && c.tagName === "tr",
+  );
+  const labels = headRow ? cells(headRow).map((c) => toString(c)) : [];
+  rows.forEach((row) =>
+    cells(row).forEach((cell, c) => {
+      cell.properties.dataLabel = labels[c] ?? "";
+    }),
+  );
   rows.forEach((row, r) => {
     const [head] = cells(row);
     const before = r ? cells(rows[r - 1])[0] : undefined;
@@ -214,7 +226,13 @@ function shapeTable(table: Element) {
         cell.children = text
           .split(" / ")
           .flatMap((part, i) => [
-            ...(i ? [{ type: "text" as const, value: " / " }] : []),
+            ...(i
+              ? [
+                  el("span", { className: ["sep"] }, [
+                    { type: "text", value: " / " },
+                  ]),
+                ]
+              : []),
             el("span", { className: [i ? "dim" : "main"] }, [
               { type: "text", value: part },
             ]),

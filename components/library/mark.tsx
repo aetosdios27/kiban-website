@@ -8,7 +8,7 @@ const pts = (a: Pt[]) =>
 export function StackMark({ lit }: { lit: number }) {
   const S = 60;
   return (
-    <svg className="lib-mark" viewBox="0 0 120 112" aria-hidden="true">
+    <svg className="lib-mark" viewBox="-4 0 128 136" aria-hidden="true">
       {LEVELS.toReversed().map((level) => {
         const o: Pt = [60, 6 + level * 20];
         const p = (x: number, y: number) => iso(o, x, y);
