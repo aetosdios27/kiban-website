@@ -203,7 +203,6 @@ export function TreeScene() {
   const root = useRef<HTMLDivElement>(null);
   const plates = useRef<(SVGGElement | null)[]>([]);
   const bodies = useRef<(SVGGElement | null)[]>([]);
-  const guides = useRef<(SVGLineElement | null)[]>([]);
   const clips = useRef<(SVGRectElement | null)[]>([]);
   const cursors = useRef<(SVGLineElement | null)[]>([]);
   const isoSvg = useRef<SVGSVGElement>(null);
@@ -354,9 +353,6 @@ export function TreeScene() {
         "--callout",
         String(Math.min(1, Math.max(0, (open - 0.55) / 0.45))),
       );
-      guides.current.forEach((line) =>
-        line?.setAttribute("stroke-dashoffset", String((1 - open) * 400)),
-      );
       const width = String(x(moment));
       clips.current.forEach((clip) => clip?.setAttribute("width", width));
       cursors.current.forEach((line) => {
@@ -410,13 +406,6 @@ export function TreeScene() {
       .join(" L");
     return `M0,${DEBT_H} L${line} L${CHART_W},${DEBT_H} Z`;
   }, []);
-  const size = SIZE * 2;
-  const corners: Pt[] = [
-    iso(O, 0, 0),
-    iso(O, size, 0),
-    iso(O, 0, size),
-    iso(O, size, size),
-  ];
 
   return (
     <div ref={root} className="tree">
@@ -435,20 +424,6 @@ export function TreeScene() {
             role="img"
             aria-label="Kiban's four LSM levels and how many files each held at this moment in the write run."
           >
-            {corners.map(([cx, cy], i) => (
-              <line
-                key={i}
-                ref={(el) => {
-                  guides.current[i] = el;
-                }}
-                className="tp-guide"
-                x1={cx}
-                x2={cx}
-                y1={cy - 170}
-                y2={cy + 230}
-                pathLength={400}
-              />
-            ))}
             {LEVELS.toReversed().map((level) => (
               <Plate
                 key={level}

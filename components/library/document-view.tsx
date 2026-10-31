@@ -79,7 +79,7 @@ export function DocumentView({ doc, essay }: { doc: Loaded; essay?: string }) {
         )}
       </header>
       <div className="lib-layout page-width">
-        <Contents headings={headings} words={words} />
+        <Contents headings={headings} />
         <article className="lib-prose">{body}</article>
       </div>
       <NextRead slug={entry.slug} />

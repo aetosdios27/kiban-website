@@ -261,7 +261,17 @@ function shapeTable(table: Element) {
   return rows.length;
 }
 
-export type Heading = { id: string; text: string; depth: 2 | 3 };
+const GIST_CHARS = 220;
+
+const isParagraph = (node: RootContent): node is Element =>
+  node.type === "element" && node.tagName === "p";
+
+export type Heading = {
+  id: string;
+  text: string;
+  depth: 2 | 3;
+  gist?: string;
+};
 
 // Which figures sit under which heading. "intro" means before the first h2.
 const FIGURES: Record<string, Record<string, string>> = {
@@ -344,6 +354,9 @@ export async function loadDocument(slug: string) {
       introPlaced = true;
     }
     body.push(node);
+    const open = headings.at(-1);
+    if (open && !open.gist && !isHeading && isParagraph(node))
+      open.gist = toString(node).slice(0, GIST_CHARS);
     if (isHeading) {
       const element = node as Element;
       const id = String(element.properties.id ?? "");
