@@ -62,14 +62,22 @@ const FIGURES: Record<string, Record<string, string>> = {
     "ownership-and-durable-state": "write",
     "maintenance-and-resource-accounting": "after",
   },
+  correctness: { "wal-durability": "generation" },
+  "group-commit-qa": { intro: "groupCommit" },
   "the-field": {
     scoreboard: "scoreboard",
     "writer-sweep": "sweep",
     "long-runs": "race",
   },
-  "group-commit": { "results-median-of-five-trials": "sweep" },
+  "group-commit": {
+    intro: "groupCommit",
+    "results-median-of-five-trials": "sweep",
+  },
+  "read-path": { "ranked-cache-hit-cost-attribution": "skyline" },
   "perfect-hash": { intro: "lookup" },
-  "point-index-cost": { intro: "lookup" },
+  "point-index-cost": { intro: "section" },
+  "latest-ten": { intro: "prefix" },
+  "small-cache": { intro: "smallCache" },
 };
 
 const figure = (name: string): Element => ({

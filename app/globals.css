@@ -2006,47 +2006,89 @@ main {
   gap: var(--s-8);
   padding-top: var(--s-6);
 }
-.lib-contents {
+.lib-log {
   position: sticky;
   top: 96px;
   align-self: start;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
+  max-height: calc(100vh - 116px);
 }
-.lib-now {
-  min-height: 2.6em;
-  font: 13px / 1.3 var(--font-mono);
-  color: var(--primary);
+.lib-log-pos {
+  font: 12px var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
 }
-.lib-progress {
-  display: block;
-  height: 2px;
-  margin-block: 12px;
-  background: var(--border);
+.lib-log-now {
+  min-height: 3.6em;
+  margin-top: 6px;
+  font: 700 15px / 1.2 var(--font-sans);
+  color: var(--foreground);
 }
-.lib-progress span {
-  display: block;
-  height: 100%;
-  background: var(--primary);
-  transform-origin: left;
-}
-.lib-contents ol {
-  margin: 0;
+.lib-tape {
+  position: relative;
+  margin: var(--s-1) 0 12px;
   padding: 0;
   list-style: none;
 }
-.lib-contents a {
+.lib-bracket {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 6px;
+  background: var(--primary);
+  box-shadow:
+    0 0 14px rgb(255 226 74 / 0.7),
+    0 0 40px rgb(255 226 74 / 0.25);
+  pointer-events: none;
+  will-change: transform, height;
+}
+.lib-tape li {
+  --near: 0;
+  position: relative;
+}
+.lib-tape a {
+  position: absolute;
+  inset: 0;
   display: block;
-  padding-block: 6px;
-  font-size: 14px;
-  line-height: 1.3;
+  padding-left: calc(18px + var(--near) * 8px);
   color: var(--muted-foreground);
   text-decoration: none;
-  transition: color 0.25s ease;
 }
-.lib-contents a:hover,
-.lib-contents [data-on] a {
+.lib-tape i {
+  position: absolute;
+  top: 0;
+  bottom: 3px;
+  left: 0;
+  width: calc(6px + var(--near) * 8px);
+  background: #242424;
+  transition: background 0.35s ease;
+}
+.lib-tape li[data-read] i {
+  background: #6b5b18;
+}
+.lib-tape li[data-on] i {
+  background: #8a7720;
+}
+.lib-tape a span {
+  display: block;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: calc(0.5 + var(--near) * 0.5);
+  transition: color 0.3s ease;
+}
+.lib-tape li[data-read] a span {
+  opacity: calc(0.34 + var(--near) * 0.66);
+}
+.lib-tape li[data-on] a span {
   color: var(--foreground);
+  opacity: 1;
+}
+.lib-log-left {
+  font: 12px var(--font-mono);
+  color: var(--muted-foreground);
 }
 .lib-prose {
   min-width: 0;
@@ -2247,12 +2289,15 @@ main {
   .lib-layout {
     grid-template-columns: minmax(0, 1fr);
   }
-  .lib-shelf-head,
-  .lib-contents {
+  .lib-shelf-head {
+    position: static;
+  }
+  .lib-log {
     position: static;
     max-height: none;
   }
-  .lib-contents ol {
+  .lib-tape,
+  .lib-log-left {
     display: none;
   }
   .lib-cards,
@@ -2263,6 +2308,120 @@ main {
   .lib-wide {
     width: 100%;
   }
+}
+
+/* The drafting kit behind the library's figures. */
+.lx-field {
+  fill: url(#lx-dots);
+}
+.lx polygon {
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+.lx-wire .lx-top {
+  fill: #0e0e0e;
+  stroke: #4a4a4a;
+}
+.lx-wire .lx-left,
+.lx-wire .lx-right {
+  fill: url(#lx-hatch);
+  stroke: #4a4a4a;
+}
+.lx-ghost .lx-top,
+.lx-ghost .lx-left,
+.lx-ghost .lx-right {
+  fill: #0b0b0b;
+  stroke: #242424;
+}
+.lx-hot .lx-top {
+  fill: rgb(255 226 74 / 0.14);
+  stroke: var(--primary);
+}
+.lx-hot .lx-left,
+.lx-hot .lx-right {
+  fill: url(#lx-hatch-hot);
+  stroke: var(--primary);
+}
+.lx-fail .lx-top {
+  fill: rgb(255 107 91 / 0.14);
+  stroke: var(--destructive);
+}
+.lx-fail .lx-left,
+.lx-fail .lx-right {
+  fill: url(#lx-hatch-fail);
+  stroke: var(--destructive);
+}
+.lx-solid .lx-top {
+  fill: var(--primary);
+  stroke: #0a0a0a;
+}
+.lx-solid .lx-left {
+  fill: #c9ad2c;
+  stroke: #0a0a0a;
+}
+.lx-solid .lx-right {
+  fill: #8a7720;
+  stroke: #0a0a0a;
+}
+.lx-beam line {
+  stroke: var(--primary);
+  stroke-width: 1.6;
+  filter: url(#lx-glow);
+}
+.lx-beam circle {
+  fill: var(--primary);
+  filter: url(#lx-glow);
+}
+.lx-beam-fail line {
+  stroke: var(--destructive);
+}
+.lx-beam-fail circle {
+  fill: var(--destructive);
+}
+.lx-note polyline {
+  fill: none;
+  stroke: #6b6b6b;
+  stroke-width: 1;
+}
+.lx-note circle {
+  fill: var(--foreground);
+}
+.lx-note text {
+  font: 16px var(--font-mono);
+  fill: var(--foreground);
+}
+.lx-note .lx-note-body {
+  font: 13.5px var(--font-mono);
+  fill: var(--muted-foreground);
+}
+.lx-mark {
+  fill: none;
+  stroke: var(--border-strong);
+}
+.lx-scene {
+  border: 1px solid var(--border);
+  background: #0a0a0a;
+}
+.lx-block {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px var(--s-2);
+  margin: 0 !important;
+  padding: 12px var(--s-2);
+  border-top: 1px solid var(--border);
+}
+.lx-block b {
+  font: 400 12px var(--font-mono);
+  color: var(--primary);
+}
+.lx-block span {
+  font: 12px var(--font-mono);
+  color: var(--foreground);
+}
+.lx-block small {
+  grid-column: 2;
+  font: 11.5px / 1.4 var(--font-mono);
+  color: var(--muted-foreground);
 }
 
 /* License page */

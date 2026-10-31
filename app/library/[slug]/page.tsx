@@ -70,7 +70,7 @@ export default async function DocumentPage({ params }: Props) {
         </p>
       </header>
       <div className="lib-layout page-width">
-        <Contents headings={headings} />
+        <Contents headings={headings} words={words} />
         <article className="lib-prose">{body}</article>
       </div>
       <footer className="lib-next page-width">
