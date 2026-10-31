@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LibraryField } from "@/components/library/dither-field";
 import { StackMark } from "@/components/library/mark";
 import { CATALOG, SHELVES } from "@/lib/library/catalog";
 import { documentStats, libraryCommit } from "@/lib/library/document";
@@ -17,6 +18,7 @@ export default function LibraryPage() {
   return (
     <main id="main-content" className="lib-index">
       <header className="lib-hero page-width">
+        <LibraryField />
         <p className="chip">
           <span className="chip-mark" aria-hidden="true" /> the library
         </p>

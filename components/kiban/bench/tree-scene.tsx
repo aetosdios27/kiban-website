@@ -23,6 +23,7 @@ import {
 } from "@/lib/kiban/tree";
 import { iso, type Pt } from "../iso-kit";
 import { Morph, useSampled } from "./morph";
+import { StopField } from "./stop-field";
 
 // One write run, inside the engine. The stacked levels pull apart, then each
 // wheel gesture springs to the next moment worth reading, so a failure lands
@@ -428,43 +429,46 @@ export function TreeScene() {
           </b>
         </div>
         <div className="tree-panes">
-          <svg
-            ref={isoSvg}
-            className="tree-iso"
-            viewBox="50 -84 610 690"
-            role="img"
-            aria-label="Kiban's four LSM levels and how many files each held at this moment in the write run."
-          >
-            {corners.map(([cx, cy], i) => (
-              <line
-                key={i}
-                ref={(el) => {
-                  guides.current[i] = el;
-                }}
-                className="tp-guide"
-                x1={cx}
-                x2={cx}
-                y1={cy - 170}
-                y2={cy + 230}
-                pathLength={400}
-              />
-            ))}
-            {LEVELS.toReversed().map((level) => (
-              <Plate
-                key={level}
-                level={level}
-                files={files[level]}
-                active={moment.active === level && !stopped}
-                stopped={stopped && level === 0}
-                groupRef={(el) => {
-                  plates.current[level] = el;
-                }}
-                bodyRef={(el) => {
-                  bodies.current[level] = el;
-                }}
-              />
-            ))}
-          </svg>
+          <div className="tree-left">
+            <StopField on={stopped} />
+            <svg
+              ref={isoSvg}
+              className="tree-iso"
+              viewBox="50 -84 610 690"
+              role="img"
+              aria-label="Kiban's four LSM levels and how many files each held at this moment in the write run."
+            >
+              {corners.map(([cx, cy], i) => (
+                <line
+                  key={i}
+                  ref={(el) => {
+                    guides.current[i] = el;
+                  }}
+                  className="tp-guide"
+                  x1={cx}
+                  x2={cx}
+                  y1={cy - 170}
+                  y2={cy + 230}
+                  pathLength={400}
+                />
+              ))}
+              {LEVELS.toReversed().map((level) => (
+                <Plate
+                  key={level}
+                  level={level}
+                  files={files[level]}
+                  active={moment.active === level && !stopped}
+                  stopped={stopped && level === 0}
+                  groupRef={(el) => {
+                    plates.current[level] = el;
+                  }}
+                  bodyRef={(el) => {
+                    bodies.current[level] = el;
+                  }}
+                />
+              ))}
+            </svg>
+          </div>
           <div
             className="tree-rail"
             role="group"

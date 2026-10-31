@@ -9,6 +9,7 @@ import {
   sweep,
   type SweepKey,
 } from "@/lib/kiban/bench";
+import { FillPattern } from "@/lib/dither";
 import { cue } from "@/lib/kiban/sound";
 import { Morph } from "./morph";
 import { useWidth } from "./use-width";
@@ -155,10 +156,14 @@ function Chart({
       {width > 0 && (
         <svg width={width} height={HEIGHT} aria-hidden="true">
           <defs>
-            <linearGradient id="sw-kiban" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0" stopColor="#ffe24a" stopOpacity="0.2" />
-              <stop offset="1" stopColor="#ffe24a" stopOpacity="0" />
-            </linearGradient>
+            <FillPattern
+              id="sw-kiban"
+              fill="gradient"
+              color="#ffe24a"
+              level={0.34}
+              floor={0}
+              ramp={{ edge: "top", at: PAD.top, length: base - PAD.top }}
+            />
             <clipPath id="sw-played">
               <rect x={0} y={0} width={fx(pos)} height={HEIGHT} />
             </clipPath>

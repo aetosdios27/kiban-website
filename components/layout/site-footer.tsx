@@ -25,6 +25,7 @@ const columns = [
       ],
       ["license", "/license", false],
       ["credits", "/license#credits", false],
+      ["built with rare ui", "https://rareui.com", true],
     ],
   },
 ] as const;

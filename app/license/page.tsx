@@ -39,6 +39,8 @@ const credits = [
   ["LobeHub Icons", "LobeHub", "MIT"],
   ["Radix UI", "the Radix authors", "MIT"],
   ["Cuelume", "Daniel Belyi", "MIT"],
+  ["Rare UI", "Swami Malode", "MIT + Commons Clause + Attribution"],
+  ["dithercn", "Leo", "MIT"],
   ["Scritto", "the Scritto authors", "MIT"],
 ] as const;
 
