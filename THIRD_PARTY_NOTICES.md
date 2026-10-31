@@ -2,7 +2,7 @@
 
 ## Rare UI
 
-`components/ui/gooey-nav.tsx`, `components/ui/rail-toc.tsx` and `components/ui/scroll-progress.tsx` are adapted from Rare UI (https://rareui.com).
+`components/ui/gooey-nav.tsx` and `components/ui/scroll-progress.tsx` are adapted from Rare UI (https://rareui.com).
 
 ```text
 MIT + Commons Clause License Condition v1.0 + Attribution

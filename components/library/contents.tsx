@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Morph } from "@/components/kiban/bench/morph";
-import RailToc from "@/components/ui/rail-toc";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import type { Heading } from "@/lib/library/document";
 
-// A live readout over the page's rail. Below the desktop layout the rail gives
-// way to a floating pill that names the section and how far through it is.
+// A hairline rail and one marker. The marker covers every section now on
+// screen and glides with CSS, so reading never runs per-frame work.
 
 const WORDS_PER_MINUTE = 220;
 const RAIL_LIMIT = 18;
+const HEADER = 96;
 
 export function Contents({
   headings,
@@ -23,47 +22,51 @@ export function Contents({
     () => headings.filter((h) => h.depth === 2),
     [headings],
   );
-  const shown = headings.length > RAIL_LIMIT ? sections : headings;
-  const items = useMemo(
-    () =>
-      shown.map((h) => ({
-        id: h.id,
-        label: h.text,
-        depth: h.depth === 3 ? 1 : 0,
-      })),
-    [shown],
-  );
-  const [active, setActive] = useState(0);
-  const [read, setRead] = useState(0);
+  const items = headings.length > RAIL_LIMIT ? sections : headings;
+  const rows = useRef<(HTMLLIElement | null)[]>([]);
+  const [range, setRange] = useState<[number, number]>([0, 0]);
+  const [marker, setMarker] = useState({ y: 0, h: 0 });
+  const [left, setLeft] = useState(Math.ceil(words / WORDS_PER_MINUTE));
 
   useEffect(() => {
     let tops: number[] = [];
-    let span = 1;
+    let end = 0;
+    let frame = 0;
     const measure = () => {
-      tops = sections.map(
-        (s) =>
-          (document.getElementById(s.id)?.getBoundingClientRect().top ?? 0) +
+      tops = items.map(
+        (h) =>
+          (document.getElementById(h.id)?.getBoundingClientRect().top ?? 0) +
           scrollY,
       );
-      span = Math.max(1, document.documentElement.scrollHeight - innerHeight);
+      end =
+        (document.querySelector(".lib-prose")?.getBoundingClientRect().bottom ??
+          0) + scrollY;
     };
-    let frame = 0;
     const read = () => {
       frame = 0;
-      const line = scrollY + innerHeight * 0.3;
-      let current = 0;
+      const from = scrollY + HEADER + 2;
+      const to = scrollY + innerHeight * 0.72;
+      let first = 0;
+      let last = 0;
       tops.forEach((top, i) => {
-        if (top <= line) current = i;
+        if (top <= from) first = i;
+        if (top <= to) last = i;
       });
-      setActive(current);
-      setRead(Math.round((scrollY / span) * 40) / 40);
+      setRange(([a, b]) =>
+        a === first && b === last ? [a, b] : [first, last],
+      );
+      const done = Math.min(1, Math.max(0, (to - tops[0]) / (end - tops[0])));
+      setLeft(Math.ceil(((1 - done) * words) / WORDS_PER_MINUTE));
     };
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(read);
     };
     measure();
     onScroll();
-    const sizes = new ResizeObserver(measure);
+    const sizes = new ResizeObserver(() => {
+      measure();
+      onScroll();
+    });
     sizes.observe(document.body);
     addEventListener("scroll", onScroll, { passive: true });
     return () => {
@@ -71,31 +74,52 @@ export function Contents({
       removeEventListener("scroll", onScroll);
       cancelAnimationFrame(frame);
     };
-  }, [sections]);
+  }, [items, words]);
+
+  useEffect(() => {
+    const first = rows.current[range[0]];
+    const last = rows.current[range[1]];
+    if (!first || !last) return;
+    const y = first.offsetTop;
+    const h = last.offsetTop + last.offsetHeight - y;
+    const frame = requestAnimationFrame(() => setMarker({ y, h }));
+    return () => cancelAnimationFrame(frame);
+  }, [range]);
 
   if (!sections.length) return <div />;
-  const left = Math.ceil(((1 - read) * words) / WORDS_PER_MINUTE);
-  const pad = (n: number) => String(n).padStart(2, "0");
   return (
     <>
-      <aside className="lib-log" aria-label="On this page">
-        <p className="lib-log-pos">
-          <Morph
-            value={`record ${pad(active + 1)} / ${pad(sections.length)}`}
-            duration={320}
+      <nav className="toc" aria-label="On this page">
+        <p className="toc-label">on this page</p>
+        <ol>
+          <span
+            className="toc-marker"
+            aria-hidden="true"
+            style={{
+              transform: `translateY(${marker.y}px)`,
+              height: marker.h,
+            }}
           />
-        </p>
-        <p className="lib-log-now">
-          <Morph value={sections[active]?.text ?? ""} duration={380} prose />
-        </p>
-        <RailToc className="lib-rail" items={items} title="on this page" />
-        <p className="lib-log-left">
-          <Morph
-            value={left > 0 ? `${left} min left` : "end of log"}
-            duration={320}
-          />
-        </p>
-      </aside>
+          {items.map((item, i) => (
+            <li
+              key={item.id}
+              ref={(el) => {
+                rows.current[i] = el;
+              }}
+              data-depth={item.depth}
+              data-on={(i >= range[0] && i <= range[1]) || undefined}
+            >
+              <a
+                href={`#${item.id}`}
+                aria-current={i === range[0] ? "location" : undefined}
+              >
+                {item.text}
+              </a>
+            </li>
+          ))}
+        </ol>
+        <p className="toc-left">{left} min left</p>
+      </nav>
       <ScrollProgress
         className="lib-pill"
         sections={sections.map((s) => ({ id: s.id, label: s.text }))}

@@ -2041,44 +2041,55 @@ main {
   gap: var(--s-8);
   padding-top: var(--s-6);
 }
-.lib-log {
+.toc {
   position: sticky;
-  top: 96px;
+  top: 104px;
   align-self: start;
-  max-height: calc(100vh - 116px);
+  max-height: calc(100vh - 128px);
+  overflow-y: auto;
+  scrollbar-width: none;
 }
-.lib-log-pos {
+.toc-label,
+.toc-left {
   font: 12px var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  color: var(--muted-foreground);
+  color: #6b6b6b;
 }
-.lib-log-now {
-  min-height: 3.6em;
-  margin-top: 6px;
-  font: 700 15px / 1.2 var(--font-sans);
-  color: var(--foreground);
+.toc ol {
+  position: relative;
+  margin: 14px 0;
+  padding: 0;
+  list-style: none;
+  border-left: 1px solid #242424;
 }
-.lib-rail {
-  margin-block: var(--s-1) 12px;
-  max-width: 100%;
+.toc-marker {
+  position: absolute;
+  top: 0;
+  left: -1px;
+  width: 1px;
+  background: var(--primary);
+  box-shadow: 0 0 8px rgb(255 226 74 / 0.45);
+  transition:
+    transform 0.42s cubic-bezier(0.2, 0.7, 0.2, 1),
+    height 0.42s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.toc li a {
+  display: block;
+  padding: 6px 0 6px 16px;
+  font-size: 13.5px;
+  line-height: 18px;
+  color: #6f6f6f;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.toc li[data-depth="3"] a {
+  padding-left: 30px;
   font-size: 13px;
 }
-.lib-rail li button {
-  min-height: 0;
-  height: auto;
-  padding: 6px 0;
-  border: 0;
-  background: transparent;
-  font: 13px / 1.3 var(--font-sans);
-  text-align: left;
-  white-space: normal;
+.toc li a:hover {
+  color: var(--foreground);
 }
-.lib-rail li button:hover:enabled {
-  background: transparent;
-}
-.lib-log-left {
-  font: 12px var(--font-mono);
-  color: var(--muted-foreground);
+.toc li[data-on] a {
+  color: var(--foreground);
 }
 .lib-prose {
   min-width: 0;
@@ -2379,12 +2390,7 @@ main {
   .lib-shelf-head {
     position: static;
   }
-  .lib-log {
-    position: static;
-    max-height: none;
-  }
-  .lib-rail,
-  .lib-log-left {
+  .toc {
     display: none;
   }
   .lib-cards,
