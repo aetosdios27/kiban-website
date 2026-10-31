@@ -31,7 +31,7 @@ const INDEX = new Map([...CHARS].map((c, i) => [c, i]));
 const NOISE = "!<>-_\\/[]{}=+*^?#%@01$&";
 const CELL_W = 7; // CSS px per character cell
 const CELL_H = 12;
-const BG = 0.039; // #0a0a0a
+const BG = 0; // #000000 (amoled)
 // The fuel burns in rows below the frame, so the visible base is already
 // blended heat rather than a flat, flickering wall of fuel.
 const HIDDEN = 4;

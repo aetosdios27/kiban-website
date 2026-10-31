@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 // Shared by every generated image (favicon, touch icon, social card).
 export const BRAND = {
-  black: "#0a0a0a",
+  black: "#000000",
   ink: "#f5f5f5",
   muted: "#8f8f8f",
   yellow: "#ffe24a",

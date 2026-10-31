@@ -7,7 +7,7 @@
 
 /*
  * Design system
- * Palette: near-black (#0a0a0a) with lifted surfaces, white ink, one yellow
+ * Palette: near-black (#000000) with lifted surfaces, white ink, one yellow
  *          (--primary) used as a highlighter, never as a fill.
  * Type:    heavy lowercase Mona Sans, expanded, for headlines; one Departure
  *          Mono word per headline (.px) and Departure Mono for every piece
@@ -20,7 +20,7 @@
    primary = the yellow; muted-foreground = secondary text; card = surface. */
 :root {
   color-scheme: dark;
-  --background: #0a0a0a;
+  --background: #000000;
   --foreground: #f5f5f5;
   --card: #111111;
   --card-foreground: #f5f5f5;
@@ -928,7 +928,7 @@ main {
   fill: var(--primary-foreground);
 }
 .strata-pill rect {
-  fill: #0a0a0a;
+  fill: #000000;
   stroke: #4d4d4d;
 }
 .strata-pill text {
@@ -1620,7 +1620,7 @@ main {
   fill: var(--border-strong);
 }
 .tp-file polygon {
-  stroke: #0a0a0a;
+  stroke: #000000;
   stroke-width: 0.6;
 }
 .tp-file .f-top {
@@ -2579,15 +2579,15 @@ main {
 }
 .lx-solid .lx-top {
   fill: var(--primary);
-  stroke: #0a0a0a;
+  stroke: #000000;
 }
 .lx-solid .lx-left {
   fill: #c9ad2c;
-  stroke: #0a0a0a;
+  stroke: #000000;
 }
 .lx-solid .lx-right {
   fill: #8a7720;
-  stroke: #0a0a0a;
+  stroke: #000000;
 }
 .lx-beam line {
   stroke: var(--primary);
@@ -2624,7 +2624,7 @@ main {
 }
 .lx-scene {
   border: 1px solid var(--border);
-  background: #0a0a0a;
+  background: #000000;
 }
 .lx-block {
   display: grid;
@@ -2830,7 +2830,7 @@ main {
   fill: var(--muted-foreground);
 }
 .tr-plate polygon {
-  stroke: #0a0a0a;
+  stroke: #000000;
   stroke-width: 1;
   transition: fill 0.35s ease;
 }
