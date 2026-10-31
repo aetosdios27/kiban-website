@@ -8,18 +8,16 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { iso, type Pt } from "@/lib/kiban/iso";
+
+export { iso, type Pt };
 
 // Shared parts for the isometric explainer diagrams: one projection, boxes,
 // plates, flat readable cards, numbered markers, and IsoFigure, which owns the
 // walkthrough (plays once on first view), hover linking and the step list.
 
-export type Pt = [number, number];
 export type Range = [number, number];
 
-export const iso = (o: Pt, x: number, y: number, z = 0): Pt => [
-  o[0] + (x - y) * 0.866,
-  o[1] + (x + y) * 0.5 - z,
-];
 const pts = (a: Pt[]) =>
   a.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
 

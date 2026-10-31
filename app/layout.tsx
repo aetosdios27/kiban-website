@@ -1,3 +1,4 @@
+import { SmoothScroll } from "@/components/layout/smooth-scroll";
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -62,7 +63,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
+  themeColor: "#000000",
   colorScheme: "dark",
 };
 
@@ -72,9 +73,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${monaSans.variable} ${departureMono.variable} ${commitMono.variable}`}
+      className={`dark ${monaSans.variable} ${departureMono.variable} ${commitMono.variable}`}
+      suppressHydrationWarning
     >
       <body>
+        <SmoothScroll />
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>

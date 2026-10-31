@@ -1,18 +1,16 @@
-import { ENGINE_SOURCE } from "@/lib/kiban/source";
+import {
+  FACT_COPY,
+  evidenceFraming,
+  getCorrectnessResults,
+  type Facts,
+} from "@/lib/kiban/facts";
 import { RollingStat } from "./rolling-stat";
 import { SectionHead } from "./section-head";
-import { ExternalLink } from "pixelarticons/react";
+import Link from "next/link";
+import { ArrowRight } from "pixelarticons/react";
 
-const results = [
-  ["1,000", "Simulated crash recoveries"],
-  ["415,929", "Mutations, simulated"],
-  ["332", "Injected faults fired"],
-  ["1,000", "SIGKILL / reopen cycles"],
-  ["530,100", "Acknowledged writes verified"],
-  ["260", "Library tests"],
-] as const;
-
-export function CorrectnessStats() {
+export function CorrectnessStats({ facts }: { facts: Facts }) {
+  const results = getCorrectnessResults(facts).slice(0, 6);
   return (
     <section
       id="correctness"
@@ -29,12 +27,10 @@ export function CorrectnessStats() {
           </>
         }
       >
-        Simulated crashes, injected filesystem faults and real SIGKILLs. After
-        each one, the reopened database is checked against every write it
-        acknowledged.
+        {FACT_COPY.correctness}
       </SectionHead>
       <dl className="section-body correctness-results">
-        {results.map(([value, label]) => (
+        {results.map(({ value, label }) => (
           <div key={label}>
             <dt>{label}</dt>
             <dd>
@@ -45,16 +41,12 @@ export function CorrectnessStats() {
       </dl>
       <div className="section-foot">
         <p>
-          From the v0.1.0 validation campaigns. Tested cases, not a proof, and
-          not a claim of production readiness.
+          {evidenceFraming(facts)} {FACT_COPY.honesty}
         </p>
-        <a
-          className="read-link"
-          href={`${ENGINE_SOURCE}/validation/CORRECTNESS.md`}
-        >
-          Read the validation report{" "}
-          <ExternalLink className="icon icon-ext" aria-hidden="true" />
-        </a>
+        <Link className="read-link" href="/library/correctness">
+          Read the repair report{" "}
+          <ArrowRight className="icon" aria-hidden="true" />
+        </Link>
       </div>
     </section>
   );

@@ -1,6 +1,7 @@
 // Replays of the long comparison runs, one-second samples from each engine's
 // median trial (generated into race-data.json by scripts/bench-data.py).
 
+import { benchRef } from "./bench";
 import raw from "./race-data.json";
 
 /** [elapsed seconds, ops/s over that second, operations done, p99 µs]. */
@@ -12,6 +13,10 @@ export type Run = {
   points: Point[];
 };
 export type Engine = "kiban" | "rocksdb";
+export const comparisonEngines: { key: Engine; name: string }[] = [
+  { key: "kiban", name: `kiban ${benchRef}` },
+  { key: "rocksdb", name: "RocksDB 11.8.1" },
+];
 
 const data = raw as unknown as Record<string, Record<Engine, Run>>;
 
@@ -20,13 +25,13 @@ export const races = [
     id: "read-100m",
     label: "100M reads",
     detail: "100k hot keys within 1M, four threads",
-    note: "The gap held in all three trials. Its cause has not been isolated.",
+    note: "The default point index costs this small-cache run half its speed: with it off, kiban reached 3.8M ops/s.",
   },
   {
     id: "updates-10m",
     label: "10M hot updates",
     detail: "10k hot keys within 100k, four threads",
-    note: "On a small hot set, RocksDB finishes in about a third of the time.",
+    note: "On a small hot set, RocksDB still finishes in about a third of the time.",
   },
   {
     id: "write-10m",

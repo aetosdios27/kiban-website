@@ -1,9 +1,14 @@
-import { notPromised, promised } from "@/lib/kiban/engine";
+import { type Facts } from "@/lib/kiban/facts";
 import { SectionHead } from "./section-head";
 
-// A spec sheet, not a tutorial: what v0.1.0 promises and what it doesn't,
-// a key and a clause per line.
-export function Guarantees() {
+// A spec sheet, not a tutorial: a key and a clause per line. The precise
+// wording and the tests that check each promise live in the row's tooltip.
+export function Guarantees({ facts }: { facts: Facts }) {
+  const promised = facts.guarantees.promised;
+  const notPromised = [
+    ...facts.guarantees.not_promised,
+    ...facts.guarantees.not_built,
+  ];
   return (
     <section
       id="guarantees"
@@ -31,8 +36,8 @@ export function Guarantees() {
         ).map(([title, rows, kept]) => (
           <dl key={title} className="spec-col" data-kept={kept || undefined}>
             <dt className="spec-col-title">{title}</dt>
-            {rows.map(([key, clause]) => (
-              <dd key={key}>
+            {rows.map(({ key, clause, detail, evidence }) => (
+              <dd key={key} title={tooltip(detail, evidence)}>
                 <code>{key}</code>
                 <span>{clause}</span>
               </dd>
@@ -42,4 +47,9 @@ export function Guarantees() {
       </div>
     </section>
   );
+}
+
+function tooltip(detail: string, evidence: string[]): string | undefined {
+  const tests = evidence.length ? `Checked by: ${evidence.join(", ")}` : "";
+  return [detail, tests].filter(Boolean).join("\n") || undefined;
 }

@@ -3,24 +3,21 @@
 import { Check, Copy } from "pixelarticons/react";
 import { ToggleGroup } from "radix-ui";
 import { useEffect, useState } from "react";
+import { Morph } from "./bench/morph";
 import { cue } from "@/lib/kiban/sound";
-import { ENGINE_TAG } from "@/lib/kiban/source";
+import type { InstallMethods } from "@/lib/kiban/facts";
 
-// The one place to install from. Both commands are pinned to the release
-// tag; the bar shows a short form and copies the full command.
-const methods = {
-  cargo: {
-    shown: "cargo add kiban --git github.com/aetosdios27/kiban",
-    command: `cargo add kiban --git https://github.com/aetosdios27/kiban --tag ${ENGINE_TAG}`,
-  },
-  source: {
-    shown: "git clone github.com/aetosdios27/kiban && cargo build",
-    command: `git clone --branch ${ENGINE_TAG} https://github.com/aetosdios27/kiban.git\ncd kiban\ncargo build --release --locked`,
-  },
-} as const;
-type Method = keyof typeof methods;
+type Method = keyof InstallMethods;
 
-export function HeroInstall() {
+export function HeroInstall({
+  methods,
+  tag,
+  note,
+}: {
+  methods: InstallMethods;
+  tag: string;
+  note: string;
+}) {
   const [method, setMethod] = useState<Method>("cargo");
   const [copied, setCopied] = useState(false);
   const m = methods[method];
@@ -65,14 +62,20 @@ export function HeroInstall() {
             </ToggleGroup.Item>
           ))}
         </ToggleGroup.Root>
-        <span className="install-pin">{ENGINE_TAG} · early release</span>
+        <span
+          className="install-pin"
+          style={{ minWidth: 0, overflowWrap: "anywhere" }}
+        >
+          {tag}
+          {note}
+        </span>
       </div>
       <div className="install-bar">
         <code title={m.command}>
           <span className="install-prompt" aria-hidden="true">
             $
           </span>
-          {m.shown}
+          <Morph value={m.shown} duration={420} />
         </code>
         <button
           type="button"

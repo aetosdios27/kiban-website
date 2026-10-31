@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Morph } from "./bench/morph";
 
 // Kiban means foundation, so the engine is drawn as ground: an isometric
 // cut-away whose strata are the LSM levels. Key order runs left to right
@@ -407,12 +408,16 @@ export function EngineStrata() {
 
         <g className="strata-ticker" transform="translate(200 532)">
           <rect width="8" height="8" y="-7" className="strata-ticker-dot" />
-          <text x="18">{narrate(t, version)}</text>
+          <foreignObject x="18" y="-13" width="520" height="20">
+            <div className="strata-ticker-line">
+              <Morph value={narrate(t, version)} duration={320} />
+            </div>
+          </foreignObject>
         </g>
       </svg>
       {/* On phones the SVG ticker would be too small; the same line, as text. */}
       <p className="strata-caption" aria-hidden="true">
-        {narrate(t, version)}
+        <Morph value={narrate(t, version)} duration={320} prose />
       </p>
     </>
   );

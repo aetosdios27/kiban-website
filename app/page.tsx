@@ -7,11 +7,22 @@ import { AskAi } from "@/components/kiban/ask-ai";
 import { HeroInstall } from "@/components/kiban/hero-install";
 import { Quickstart } from "@/components/kiban/quickstart";
 import { Guarantees } from "@/components/kiban/guarantees";
-import { VersusRocksdb } from "@/components/kiban/versus-rocksdb";
+import { VersusField } from "@/components/kiban/versus-field";
 import { LsmAscii } from "@/components/kiban/lsm-ascii";
+import {
+  getFacts,
+  getExamples,
+  getInstall,
+  heroStatement,
+} from "@/lib/kiban/facts";
+import { LibraryTeaser } from "@/components/kiban/library-teaser";
+import { Status } from "@/components/kiban/status";
 import { ArrowDown } from "pixelarticons/react";
 
-export default function Home() {
+export const revalidate = 3600;
+
+export default async function Home() {
+  const facts = await getFacts();
   return (
     <main id="main-content">
       <section className="hero" aria-labelledby="hero-title">
@@ -23,13 +34,11 @@ export default function Home() {
           <h1 id="hero-title">
             a storage engine, built from <span className="px">scratch.</span>
           </h1>
-          <p className="hero-statement">
-            kiban is an embedded LSM-tree key-value store for Linux, written in
-            Rust: a write-ahead log, memtables, SSTs, leveled compaction,
-            snapshots and crash recovery.
+          <p className="hero-statement" style={{ overflowWrap: "anywhere" }}>
+            {heroStatement(facts)}
           </p>
           <AskAi />
-          <HeroInstall />
+          <HeroInstall {...getInstall(facts)} />
           <a className="mono-link" href="#quickstart">
             see it in code
             <ArrowDown className="icon icon-drop" aria-hidden="true" />
@@ -39,10 +48,10 @@ export default function Home() {
           <LsmAscii />
         </div>
       </section>
-      <Quickstart />
-      <Guarantees />
-      <CorrectnessStats />
-      <VersusRocksdb />
+      <Quickstart examples={getExamples(facts)} specs={facts.specs} />
+      <Guarantees facts={facts} />
+      <CorrectnessStats facts={facts} />
+      <VersusField />
       <section
         id="write-path"
         className="section"
@@ -88,6 +97,8 @@ export default function Home() {
         </div>
       </section>
       <ArchitectureDiagram />
+      <Status facts={facts} />
+      <LibraryTeaser />
     </main>
   );
 }

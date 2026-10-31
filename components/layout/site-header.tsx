@@ -1,13 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Github } from "pixelarticons/react";
+import { SiteNav } from "./site-nav";
 import { SoundToggle } from "./sound-toggle";
-
-const links = [
-  ["quickstart", "/#quickstart"],
-  ["guarantees", "/#guarantees"],
-  ["benchmarks", "/#benchmarks"],
-  ["internals", "/#write-path"],
-] as const;
 
 export function SiteHeader() {
   return (
@@ -19,13 +13,9 @@ export function SiteHeader() {
           </span>
           kiban
         </Link>
-        <nav className="site-nav" aria-label="Sections">
-          {links.map(([label, href]) => (
-            <Link key={href} href={href} data-cuelume-navigate>
-              {label}
-            </Link>
-          ))}
-        </nav>
+        <div className="site-nav">
+          <SiteNav />
+        </div>
         <div className="site-actions">
           <SoundToggle />
           <a
