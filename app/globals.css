@@ -1404,18 +1404,6 @@ main {
 .b-rocks {
   color: #a3a3a3;
 }
-.b-sqlite {
-  color: #3ed6b0;
-}
-.b-sync {
-  color: #b59a2e;
-}
-.b-fill {
-  color: rgb(255 226 74 / 0.4);
-}
-.b-cursor {
-  color: var(--foreground);
-}
 .tr-lanes {
   display: grid;
   gap: var(--s-2);

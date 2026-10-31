@@ -1,14 +1,7 @@
 "use client";
 
 import { Pause, Play } from "pixelarticons/react";
-import {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   fmtFull,
   fmtOps,
@@ -16,10 +9,10 @@ import {
   sweep,
   type SweepKey,
 } from "@/lib/kiban/bench";
+import { FillPattern } from "@/lib/dither";
 import { cue } from "@/lib/kiban/sound";
 import { Morph } from "./morph";
 import { useWidth } from "./use-width";
-import { DOT, plot } from "./braille";
 
 // Durable throughput as writers double. The line glides between measured
 // points, but every number on screen is a measured value at its nearest stop.
@@ -27,11 +20,13 @@ import { DOT, plot } from "./braille";
 const SWEEP_MS = 5200;
 const RETURN_RATE = 0.006; // stops per millisecond when settling on a stop
 const LAST = sweep.writers.length - 1;
+const HEIGHT = 320;
+const PAD = { top: 18, right: 96, bottom: 34, left: 46 };
 const SEGMENT_SAMPLES = 28;
 const SERIES: { key: SweepKey; name: string; color: string; dash?: string }[] =
   [
     { key: "kiban-group", name: "kiban", color: "#ffe24a" },
-    { key: "rocksdb", name: "RocksDB", color: "#a3a3a3" },
+    { key: "rocksdb", name: "RocksDB", color: "#4f9dff" },
     { key: "sqlite", name: "SQLite", color: "#3ed6b0" },
     {
       key: "kiban-sync",
@@ -46,34 +41,33 @@ const TOP =
       ...SERIES.flatMap(({ key }) => sweep.series[key].map((p) => p.ops)),
     ) / 5000,
   ) * 5000;
+const TICKS = Array.from({ length: TOP / 5000 + 1 }, (_, i) => i * 5000);
 
-const CURVES = (() => {
-  const out = {} as Record<SweepKey, (pos: number) => number>;
-  for (const { key } of SERIES) {
-    const values = sweep.series[key].map((p) => p.ops);
-    const slopes = values.slice(1).map((v, i) => v - values[i]);
-    const tangents = values.map((_, i) => {
-      if (i === 0) return slopes[0];
-      if (i === values.length - 1) return slopes[i - 1];
-      const [a, b] = [slopes[i - 1], slopes[i]];
-      return a * b <= 0 ? 0 : (2 * a * b) / (a + b);
-    });
-    out[key] = (pos: number) => {
-      const i = Math.min(values.length - 2, Math.floor(pos));
-      const t = pos - i;
-      const [t2, t3] = [t * t, t * t * t];
-      return (
-        (2 * t3 - 3 * t2 + 1) * values[i] +
-        (t3 - 2 * t2 + t) * tangents[i] +
-        (-2 * t3 + 3 * t2) * values[i + 1] +
-        (t3 - t2) * tangents[i + 1]
-      );
-    };
-  }
-  return out;
-})();
+/** Monotone cubic through the measured points, so a curve never invents a peak. */
+function curve(values: number[]) {
+  const slopes = values.slice(1).map((v, i) => v - values[i]);
+  const tangents = values.map((_, i) => {
+    if (i === 0) return slopes[0];
+    if (i === values.length - 1) return slopes[i - 1];
+    const [a, b] = [slopes[i - 1], slopes[i]];
+    return a * b <= 0 ? 0 : (2 * a * b) / (a + b);
+  });
+  return (pos: number) => {
+    const i = Math.min(values.length - 2, Math.floor(pos));
+    const t = pos - i;
+    const [t2, t3] = [t * t, t * t * t];
+    return (
+      (2 * t3 - 3 * t2 + 1) * values[i] +
+      (t3 - 2 * t2 + t) * tangents[i] +
+      (-2 * t3 + 3 * t2) * values[i + 1] +
+      (t3 - t2) * tangents[i + 1]
+    );
+  };
+}
 
-const GUTTER = 6;
+const CURVES = Object.fromEntries(
+  SERIES.map(({ key }) => [key, curve(sweep.series[key].map((p) => p.ops))]),
+) as Record<SweepKey, (pos: number) => number>;
 
 function Chart({
   pos,
@@ -91,187 +85,36 @@ function Chart({
   onToggle: () => void;
 }) {
   const [ref, width] = useWidth<HTMLDivElement>();
-  const probe = useRef<HTMLSpanElement>(null);
   const dragging = useRef(false);
-  const [ch, setCh] = useState(8);
-  useLayoutEffect(() => {
-    const measured = probe.current?.getBoundingClientRect().width;
-    if (measured) setCh(measured / 10);
-  }, [width]);
-
-  const rows = width < 640 ? 12 : 16;
-  const cols = Math.max(20, Math.floor(width / ch) - GUTTER);
-  const W = cols * 2;
-  const Hd = rows * 4;
-  const base = Hd - 1;
-  const dx = (p: number) => Math.round((p / LAST) * (W - 1));
-  const dy = (ops: number) => Math.round((1 - ops / TOP) * (Hd - 1));
-
-  const layer = () => new Uint8Array(cols * rows);
-
-  const build = useMemo(() => {
-    if (width <= 0) return null;
-    const g0 = layer(); // kiban
-    const g1 = layer(); // rocksdb
-    const g2 = layer(); // sqlite
-    const g3 = layer(); // sync
-    const p0 = layer();
-    const p1 = layer();
-    const p2 = layer();
-    const p3 = layer();
-    const pFill = layer();
-    const cursorL = layer();
-
-    const sampleFull = (key: SweepKey) => {
-      const pts: [number, number][] = [];
+  const inner = Math.max(120, width - PAD.left - PAD.right);
+  const fx = (p: number) => PAD.left + (p / LAST) * inner;
+  const fy = (ops: number) =>
+    PAD.top + (1 - ops / TOP) * (HEIGHT - PAD.top - PAD.bottom);
+  const base = HEIGHT - PAD.bottom;
+  const paths = useMemo(() => {
+    const out = {} as Record<SweepKey, string>;
+    for (const { key } of SERIES) {
+      const parts: string[] = [];
       for (let i = 0; i <= LAST * SEGMENT_SAMPLES; i++) {
-        const pp = i / SEGMENT_SAMPLES;
-        pts.push([dx(pp), dy(CURVES[key](pp))]);
+        const p = i / SEGMENT_SAMPLES;
+        parts.push(`${fx(p).toFixed(1)},${fy(CURVES[key](p)).toFixed(1)}`);
       }
-      return pts;
-    };
-    const gArr = [g0, g1, g2, g3];
-    const pLayers = [p0, p1, p2, p3];
-    SERIES.forEach(({ key }, idx) => {
-      plot(gArr[idx], cols, Hd, sampleFull(key));
-    });
-
-    const playedLast = Math.max(0, Math.min(LAST, pos));
-    const playedSamples = Math.floor(playedLast * SEGMENT_SAMPLES);
-    SERIES.forEach(({ key }, idx) => {
-      const pts: [number, number][] = [];
-      for (let i = 0; i <= playedSamples; i++) {
-        const pp = i / SEGMENT_SAMPLES;
-        pts.push([dx(pp), dy(CURVES[key](pp))]);
-      }
-      pts.push([dx(playedLast), dy(CURVES[key](playedLast))]);
-      plot(pLayers[idx], cols, Hd, pts);
-    });
-
-    // Dithered fill under the kiban curve, up to the cursor.
-    const lastX = dx(playedLast);
-    for (let x = 0; x <= lastX && x < W; x++) {
-      const pp = (x / (W - 1)) * LAST;
-      const topY = dy(CURVES["kiban-group"](pp));
-      for (let y = topY; y <= base; y++) {
-        if ((x + y) % 2 === 0) {
-          pFill[(y >> 2) * cols + (x >> 1)] |= DOT[x & 1][y & 3];
-        }
-      }
+      out[key] = `M${parts.join(" L")}`;
     }
-
-    // Cursor line.
-    const cx = dx(playedLast);
-    for (let y = 0; y <= base; y++) {
-      cursorL[(y >> 2) * cols + (cx >> 1)] |= DOT[cx & 1][y & 3];
-    }
-
-    const ghostCombined = new Uint8Array(cols * rows);
-    for (let i = 0; i < cols * rows; i++) {
-      ghostCombined[i] = g0[i] | g1[i] | g2[i] | g3[i];
-    }
-
-    return {
-      pLayers,
-      pFill,
-      cursorL,
-      ghostCombined,
-    };
+    return out;
+    // fx and fy only change with the measured width.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [width, pos]);
+  }, [width]);
 
   const seek = (clientX: number, el: Element) => {
     const rect = el.getBoundingClientRect();
-    const col = (clientX - rect.left) / ch - GUTTER;
-    const p = Math.min(LAST, Math.max(0, (col / cols) * LAST));
-    onDrag(p);
+    onDrag(
+      Math.min(
+        LAST,
+        Math.max(0, ((clientX - rect.left - PAD.left) / inner) * LAST),
+      ),
+    );
   };
-
-  if (width <= 0 || !build) {
-    return (
-      <div ref={ref} className="sw-plot" aria-hidden="true">
-        <span ref={probe} className="tr-probe" aria-hidden="true">
-          ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-        </span>
-      </div>
-    );
-  }
-
-  const { pLayers, pFill, cursorL, ghostCombined } = build;
-
-  const yLabels = new Map<number, string>([
-    [0, fmtOps(TOP)],
-    [Math.round((rows - 1) / 2), fmtOps(Math.round(TOP / 2))],
-    [rows - 1, "0"],
-  ]);
-
-  // X (writer) labels.
-  const timeRow: string[] = Array(cols).fill(" ");
-  const writerLabels = sweep.writers.map((w, i) => ({ w, col: Math.round((i / LAST) * (cols - 1)) }));
-  for (const { w, col } of writerLabels) {
-    const label = String(w);
-    const start = Math.max(0, Math.min(cols - label.length, col - Math.floor(label.length / 2)));
-    for (let i = 0; i < label.length; i++) timeRow[start + i] = label[i];
-  }
-
-  const lines: ReactNode[] = [];
-  for (let r = 0; r < rows; r++) {
-    const spans: ReactNode[] = [];
-    let cls = "";
-    let text = "";
-    const flush = () => {
-      if (text)
-        spans.push(
-          <span key={spans.length} className={cls || undefined}>
-            {text}
-          </span>,
-        );
-      text = "";
-    };
-    for (let c = 0; c < cols; c++) {
-      const i = r * cols + c;
-      let next = "";
-      let bits = 0;
-      if (pLayers[0][i]) {
-        next = "b-kiban";
-        bits = pLayers[0][i] | pFill[i];
-      } else if (pLayers[1][i]) {
-        next = "b-rocks";
-        bits = pLayers[1][i];
-      } else if (pLayers[2][i]) {
-        next = "b-sqlite";
-        bits = pLayers[2][i];
-      } else if (pLayers[3][i]) {
-        next = "b-sync";
-        bits = pLayers[3][i];
-      } else if (pFill[i]) {
-        next = "b-fill";
-        bits = pFill[i];
-      } else if (ghostCombined[i]) {
-        next = "b-ghost";
-        bits = ghostCombined[i];
-      } else if (cursorL[i]) {
-        next = "b-cursor";
-        bits = cursorL[i];
-      }
-      if (next !== cls) {
-        flush();
-        cls = next;
-      }
-      text += bits ? String.fromCharCode(0x2800 + bits) : " ";
-    }
-    flush();
-    const label = yLabels.get(r);
-    lines.push(
-      <div key={r} className="tr-row">
-        <span className="tr-gutter">
-          {(label ?? "").padStart(GUTTER - 1)}
-          {label ? "┤" : "│"}
-        </span>
-        {spans}
-      </div>,
-    );
-  }
 
   return (
     <div
@@ -310,21 +153,109 @@ function Chart({
         onRelease();
       }}
     >
-      <span ref={probe} className="tr-probe" aria-hidden="true">
-        ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-      </span>
       {width > 0 && (
-        <div className="tr-grid" aria-hidden="true">
-          {lines}
-          <div className="tr-row">
-            <span className="tr-gutter">{" ".repeat(GUTTER - 1)}└</span>
-            <span className="b-axis">{"─".repeat(cols)}</span>
-          </div>
-          <div className="tr-row">
-            <span className="tr-gutter">{" ".repeat(GUTTER)}</span>
-            <span className="b-axis-label">{timeRow.join("")}</span>
-          </div>
-        </div>
+        <svg width={width} height={HEIGHT} aria-hidden="true">
+          <defs>
+            <FillPattern
+              id="sw-kiban"
+              fill="gradient"
+              color="#ffe24a"
+              level={0.34}
+              floor={0}
+              ramp={{ edge: "top", at: PAD.top, length: base - PAD.top }}
+            />
+            <clipPath id="sw-played">
+              <rect x={0} y={0} width={fx(pos)} height={HEIGHT} />
+            </clipPath>
+          </defs>
+          {TICKS.map((tick) => (
+            <g key={tick}>
+              <line
+                className="sw-grid"
+                x1={PAD.left}
+                x2={PAD.left + inner}
+                y1={fy(tick)}
+                y2={fy(tick)}
+              />
+              <text
+                className="sw-tick"
+                x={PAD.left - 10}
+                y={fy(tick) + 4}
+                textAnchor="end"
+              >
+                {tick ? fmtOps(tick) : "0"}
+              </text>
+            </g>
+          ))}
+          {sweep.writers.map((writers, i) => (
+            <text
+              key={writers}
+              className="sw-tick"
+              data-on={i === stop || undefined}
+              x={fx(i)}
+              y={HEIGHT - 10}
+              textAnchor="middle"
+            >
+              {writers}
+            </text>
+          ))}
+          {SERIES.map(({ key, color, dash }) => (
+            <path
+              key={key}
+              className="sw-ghost"
+              d={paths[key]}
+              stroke={color}
+              strokeDasharray={dash}
+            />
+          ))}
+          <g clipPath="url(#sw-played)">
+            <path
+              d={`${paths["kiban-group"]} L${fx(LAST)},${base} L${fx(0)},${base} Z`}
+              fill="url(#sw-kiban)"
+            />
+            {SERIES.toReversed().map(({ key, color, dash }) => (
+              <path
+                key={key}
+                className="sw-line"
+                d={paths[key]}
+                stroke={color}
+                strokeDasharray={dash}
+                data-lead={key === "kiban-group" || undefined}
+              />
+            ))}
+          </g>
+          <line
+            className="sw-cursor"
+            x1={fx(pos)}
+            x2={fx(pos)}
+            y1={PAD.top}
+            y2={base}
+          />
+          {SERIES.toReversed().map(({ key, color }) => (
+            <circle
+              key={key}
+              className="sw-head"
+              cx={fx(pos)}
+              cy={fy(CURVES[key](pos))}
+              r={key === "kiban-group" ? 5 : 4}
+              fill={color}
+            />
+          ))}
+          {SERIES.slice(0, 2).map(({ key, name, color }) => (
+            <g key={key} className="sw-end">
+              <line
+                x1={fx(LAST) + 8}
+                x2={fx(LAST) + 20}
+                y1={fy(sweep.series[key][LAST].ops)}
+                y2={fy(sweep.series[key][LAST].ops)}
+                stroke={color}
+              />
+              <text x={fx(LAST) + 26} y={fy(sweep.series[key][LAST].ops) + 4}>
+                {name}
+              </text>
+            </g>
+          ))}
+        </svg>
       )}
     </div>
   );
