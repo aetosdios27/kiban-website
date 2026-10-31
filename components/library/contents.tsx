@@ -19,6 +19,8 @@ const RAIL_VH = 0.62;
 const MIN_GAP = 5;
 const REACH = 22; // how far the bulge spreads, in rail pixels
 const SWELL = 0.9;
+const NAME_ROW = 11; // lines this close share the name's row
+const NAME_GAP = 12;
 const DRAG = 0.8; // wheel lost at the centre of a detent
 const DRAG_PX = 70; // page distance over which a heading is felt
 
@@ -89,14 +91,17 @@ export function Contents({
       );
       const reading = ys[index] + f * ((ys[index + 1] ?? height) - ys[index]);
       const centre = pointer.current ?? reading;
+      let reach = 0;
       lines.current.forEach((line, i) => {
         if (!line) return;
         const near = Math.exp(-(((ys[i] - centre) / REACH) ** 2));
         line.style.setProperty("--scale", (1 + near * SWELL).toFixed(3));
         line.style.setProperty("--tone", (0.3 + near * 0.7).toFixed(3));
+        if (Math.abs(ys[i] - centre) < NAME_ROW)
+          reach = Math.max(reach, lineWidth(headings[i]) * (1 + near * SWELL));
       });
       if (label.current)
-        label.current.style.transform = `translateY(${centre.toFixed(1)}px)`;
+        label.current.style.transform = `translate(${(reach + NAME_GAP).toFixed(1)}px, ${centre.toFixed(1)}px)`;
       if (index !== current) {
         current = index;
         setActive(index);

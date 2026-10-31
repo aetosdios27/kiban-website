@@ -2088,13 +2088,10 @@ main {
 .lens-name {
   position: absolute;
   top: -8px;
-  left: 118px;
+  left: 0;
   z-index: 1;
-  display: flex;
-  justify-content: flex-start;
-  width: 166px;
+  width: 190px;
   overflow: hidden;
-  text-align: left;
   font-size: 13px;
   line-height: 18px;
   white-space: nowrap;
