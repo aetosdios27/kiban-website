@@ -168,25 +168,40 @@ export function Scene({
     let frame = 0;
     let current = 0;
     const tick = () => {
-      frame = requestAnimationFrame(tick);
+      frame = 0;
       const el = ref.current;
       if (!el) return;
       const { top, height: h } = el.getBoundingClientRect();
-      if (top > innerHeight * 1.2 || top + h < -innerHeight * 0.2) return;
       // Complete once the figure's centre reaches the upper third of the screen.
-      const target = Math.min(
-        1,
-        Math.max(
-          0,
-          (innerHeight * 0.92 - top) / (innerHeight * 0.62 + h * 0.5),
-        ),
-      );
+      const target = still
+        ? 1
+        : Math.min(
+            1,
+            Math.max(
+              0,
+              (innerHeight * 0.92 - top) / (innerHeight * 0.62 + h * 0.5),
+            ),
+          );
       current += (target - current) * (still ? 1 : 0.14);
       if (Math.abs(target - current) < 0.0006) current = target;
       setP(current);
+      if (current !== target) frame = requestAnimationFrame(tick);
     };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
+    const wake = () => {
+      if (!frame) frame = requestAnimationFrame(tick);
+    };
+    const watch = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        addEventListener("scroll", wake, { passive: true });
+        wake();
+      } else removeEventListener("scroll", wake);
+    });
+    if (ref.current) watch.observe(ref.current);
+    return () => {
+      watch.disconnect();
+      removeEventListener("scroll", wake);
+      cancelAnimationFrame(frame);
+    };
   }, []);
 
   return (

@@ -148,6 +148,15 @@ const RailToc = ({
     [target],
   );
 
+  const cachedTops = React.useRef<number[] | null>(null);
+  React.useEffect(() => {
+    const reset = new ResizeObserver(() => {
+      cachedTops.current = null;
+    });
+    reset.observe(document.body);
+    return () => reset.disconnect();
+  }, []);
+
   const sync = React.useCallback(() => {
     const nodes = lengths.current;
     if (!nodes.length) return;
@@ -171,10 +180,15 @@ const RailToc = ({
     const line = Math.min(offset, scrollTop);
     const anchor = line + Math.max(0, viewHeight - line - remaining);
 
-    const tops = items.map((item) => {
-      const el = document.getElementById(item.id);
-      return el ? el.getBoundingClientRect().top - originTop : Infinity;
-    });
+    // kiban: measured once per layout, so scrolling never forces a reflow
+    if (!cachedTops.current)
+      cachedTops.current = items.map((item) => {
+        const el = document.getElementById(item.id);
+        return el
+          ? el.getBoundingClientRect().top - originTop + scrollTop
+          : Infinity;
+      });
+    const tops = cachedTops.current.map((top) => top - scrollTop);
 
     const index = tops.findLastIndex((top) => top <= anchor);
     let next: number;

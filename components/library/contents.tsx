@@ -37,25 +37,37 @@ export function Contents({
   const [read, setRead] = useState(0);
 
   useEffect(() => {
-    let frame = 0;
+    let tops: number[] = [];
+    let span = 1;
     const measure = () => {
+      tops = sections.map(
+        (s) =>
+          (document.getElementById(s.id)?.getBoundingClientRect().top ?? 0) +
+          scrollY,
+      );
+      span = Math.max(1, document.documentElement.scrollHeight - innerHeight);
+    };
+    let frame = 0;
+    const read = () => {
       frame = 0;
-      const line = innerHeight * 0.3;
+      const line = scrollY + innerHeight * 0.3;
       let current = 0;
-      sections.forEach((s, i) => {
-        const el = document.getElementById(s.id);
-        if (el && el.getBoundingClientRect().top <= line) current = i;
+      tops.forEach((top, i) => {
+        if (top <= line) current = i;
       });
       setActive(current);
-      const page = document.documentElement;
-      setRead(scrollY / Math.max(1, page.scrollHeight - innerHeight));
+      setRead(Math.round((scrollY / span) * 40) / 40);
     };
     const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(measure);
+      if (!frame) frame = requestAnimationFrame(read);
     };
+    measure();
     onScroll();
+    const sizes = new ResizeObserver(measure);
+    sizes.observe(document.body);
     addEventListener("scroll", onScroll, { passive: true });
     return () => {
+      sizes.disconnect();
       removeEventListener("scroll", onScroll);
       cancelAnimationFrame(frame);
     };

@@ -11,6 +11,7 @@ import { unified } from "unified";
 import { visit } from "unist-util-visit";
 import { ENGINE_REPO } from "@/lib/kiban/source";
 import { CATALOG } from "./catalog";
+import { GLOSSARY } from "./glossary";
 import meta from "@/content/library/meta.json";
 
 export const libraryCommit = meta.commit;
@@ -52,6 +53,195 @@ const ALIASES: Record<string, string> = {
   rs: "rust",
 };
 const highlighter = createHighlighter({ themes: [THEME], langs: LANGUAGES });
+
+const TERMS = Object.keys(GLOSSARY).sort((a, b) => b.length - a.length);
+const TERM_RE = new RegExp(
+  `(?<![\\w/.-])(${TERMS.map((t) => t.replace("+", "\\+")).join("|")})(?![\\w/-])`,
+);
+const NUMBER_RE =
+  /(?<![\w.])(\d[\d,]*(?:\.\d+)?(?:[–-]\d[\d,]*(?:\.\d+)?)?(?:\s?(?:×|x\b|%|µs|ns|ms|MiB|GiB|KiB|MB|bytes|ops\/s|writes\/s|fdatasyncs?|syncs?)))/;
+const CALLOUT_RE =
+  /^(Result|Verdict|GO|Outcome|Restored invariant|Recommendation|Preliminary|Status|HOLD)\b/;
+const SPLIT_WORDS = 70;
+
+const el = (
+  tagName: string,
+  properties: Element["properties"],
+  children: Element["children"],
+): Element => ({ type: "element", tagName, properties, children });
+
+/** Finds the definitions and numbers in one paragraph's plain text. */
+function annotate(nodes: Element["children"], seen: Set<string>) {
+  const out: Element["children"] = [];
+  for (const node of nodes) {
+    if (node.type !== "text") {
+      out.push(node);
+      continue;
+    }
+    let rest = node.value;
+    while (rest) {
+      const term = TERM_RE.exec(rest);
+      const fresh = term && !seen.has(term[1]) ? term : null;
+      const number = NUMBER_RE.exec(rest);
+      const hit =
+        fresh && (!number || fresh.index <= number.index) ? fresh : number;
+      if (!hit) {
+        out.push({ type: "text", value: rest });
+        break;
+      }
+      if (hit.index)
+        out.push({ type: "text", value: rest.slice(0, hit.index) });
+      if (hit === fresh) {
+        seen.add(hit[1]);
+        out.push(el("term-slot", { name: hit[1] }, []));
+      } else {
+        out.push(
+          el("span", { className: ["n"] }, [{ type: "text", value: hit[1] }]),
+        );
+      }
+      rest = rest.slice(hit.index + hit[0].length);
+    }
+  }
+  return out;
+}
+
+const sentenceEnd = (text: string, from = 0) => {
+  const re = /[.?!:](?=\s+[A-Z`"(])/g;
+  re.lastIndex = from;
+  const m = re.exec(text);
+  return m ? m.index + 1 : -1;
+};
+
+/** Divides at a sentence near the middle; every word stays. */
+function splitParagraph(node: Element): Element[] {
+  const words = toString(node).split(/\s+/).length;
+  if (words < SPLIT_WORDS) return [node];
+  let seen = 0;
+  const half = toString(node).length / 2;
+  for (let i = 0; i < node.children.length; i++) {
+    const child = node.children[i];
+    const text = child.type === "text" ? child.value : "";
+    if (child.type !== "text") {
+      seen += toString(child as Element).length;
+      continue;
+    }
+    if (seen + text.length >= half) {
+      const cut = sentenceEnd(text, Math.max(0, half - seen));
+      if (cut > 0) {
+        const left = node.children.slice(0, i);
+        left.push({ type: "text", value: text.slice(0, cut) });
+        const right = [
+          { type: "text" as const, value: text.slice(cut).trimStart() },
+          ...node.children.slice(i + 1),
+        ];
+        return [
+          ...splitParagraph({ ...node, children: left }),
+          ...splitParagraph({ ...node, children: right }),
+        ];
+      }
+    }
+    seen += text.length;
+  }
+  return [node];
+}
+
+/** Sets a paragraph's opening sentence apart, so a page can be skimmed. */
+function leadIn(node: Element) {
+  const first = node.children[0];
+  if (first?.type !== "text") return node;
+  const cut = sentenceEnd(first.value);
+  if (cut < 0) return node;
+  return {
+    ...node,
+    children: [
+      el("span", { className: ["lead-in"] }, [
+        { type: "text", value: first.value.slice(0, cut) },
+      ]),
+      { type: "text" as const, value: first.value.slice(cut) },
+      ...node.children.slice(1),
+    ],
+  };
+}
+
+function readingLayer(tree: Root) {
+  const seen = new Set<string>();
+  const body: RootContent[] = [];
+  for (const node of tree.children) {
+    if (node.type !== "element" || node.tagName !== "p") {
+      body.push(node);
+      continue;
+    }
+    for (const part of splitParagraph(node)) {
+      const callout = CALLOUT_RE.test(toString(part));
+      const shaped = callout ? part : leadIn(part);
+      shaped.children = shaped.children.flatMap((child) => {
+        if (child.type === "element" && child.tagName === "span") {
+          child.children = annotate(child.children, seen);
+          return [child];
+        }
+        return annotate([child], seen);
+      });
+      body.push(
+        callout ? el("aside", { className: ["callout"] }, [shaped]) : shaped,
+      );
+    }
+  }
+  tree.children = body;
+  visit(tree, "element", (node) => {
+    if (node.tagName === "li") node.children = annotate(node.children, seen);
+  });
+}
+
+/** Mutes repeated row labels, ranks number parts, and sizes plain columns. */
+function shapeTable(table: Element) {
+  const tbody = table.children.find(
+    (c): c is Element => c.type === "element" && c.tagName === "tbody",
+  );
+  if (!tbody) return 0;
+  const rows = tbody.children.filter(
+    (c): c is Element => c.type === "element" && c.tagName === "tr",
+  );
+  const cells = (row: Element) =>
+    row.children.filter((c): c is Element => c.type === "element");
+  rows.forEach((row, r) => {
+    const [head] = cells(row);
+    const before = r ? cells(rows[r - 1])[0] : undefined;
+    if (head && before && toString(head) === toString(before))
+      head.properties.dataRepeat = "true";
+    for (const cell of cells(row).slice(1)) {
+      const text = toString(cell);
+      if (/^[\d.,\s/—-]+$/.test(text) && text.includes(" / "))
+        cell.children = text
+          .split(" / ")
+          .flatMap((part, i) => [
+            ...(i ? [{ type: "text" as const, value: " / " }] : []),
+            el("span", { className: [i ? "dim" : "main"] }, [
+              { type: "text", value: part },
+            ]),
+          ]);
+    }
+  });
+  const widths = cells(rows[0] ?? el("tr", {}, [])).length;
+  for (let c = 1; c < widths; c++) {
+    const column = rows.map((row) =>
+      toString(cells(row)[c] ?? el("td", {}, [])),
+    );
+    const values = column.map((v) => Number(v.replace(/,/g, "")));
+    if (values.length < 3 || values.some((v) => !Number.isFinite(v))) continue;
+    const top = Math.max(...values);
+    if (top <= 0) continue;
+    rows.forEach((row, r) => {
+      const cell = cells(row)[c];
+      if (cell)
+        cell.properties.style = `--bar:${((values[r] / top) * 100).toFixed(1)}%`;
+    });
+    rows.forEach((row) => {
+      const cell = cells(row)[c];
+      if (cell) cell.properties.className = ["cell-bar"];
+    });
+  }
+  return rows.length;
+}
 
 export type Heading = { id: string; text: string; depth: 2 | 3 };
 
@@ -150,6 +340,7 @@ export async function loadDocument(slug: string) {
   if (!introPlaced) body.push(figure(figures.intro));
   tree.children = body;
 
+  readingLayer(tree);
   const shiki = await highlighter;
   visit(tree, "element", (node, index, parent) => {
     if (node.tagName === "a") {
@@ -161,10 +352,11 @@ export async function loadDocument(slug: string) {
       if (raw) node.properties.dataRaw = "true";
     }
     if (node.tagName === "table" && parent && index !== undefined) {
+      const rows = shapeTable(node);
       parent.children[index] = {
         type: "element",
-        tagName: "div",
-        properties: { className: ["lib-table"], dataLenisPrevent: "x" },
+        tagName: "table-slot",
+        properties: { rows },
         children: [node],
       };
       return ["skip", index + 1];

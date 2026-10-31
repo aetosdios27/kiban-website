@@ -1,6 +1,7 @@
 "use client";
 
 import Lenis, { type VirtualScrollData } from "lenis";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 let lenis: Lenis | null = null;
@@ -22,8 +23,12 @@ export const pageScrollTarget = () => lenis?.targetScroll ?? scrollY;
 // Wheel and trackpad input glide instead of stepping. Touch keeps native
 // scrolling, and reduced-motion visitors never start the loop.
 export function SmoothScroll() {
+  // Reading pages keep native scrolling: it runs off the main thread, so
+  // nothing on the page can make it stutter.
+  const reading = usePathname().startsWith("/library");
   useEffect(() => {
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (reading || matchMedia("(prefers-reduced-motion: reduce)").matches)
+      return;
     const instance = new Lenis({
       anchors: true,
       lerp: 0.11,
@@ -39,6 +44,6 @@ export function SmoothScroll() {
       instance.destroy();
       lenis = null;
     };
-  }, []);
+  }, [reading]);
   return null;
 }
