@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { LibraryField } from "@/components/library/dither-field";
+import { DocCard } from "@/components/library/doc-card";
 import { StackMark } from "@/components/library/mark";
 import { CATALOG, SHELVES } from "@/lib/library/catalog";
 import { documentStats, libraryCommit } from "@/lib/library/document";
@@ -42,7 +42,7 @@ export default function LibraryPage() {
           <ol className="lib-cards">
             {CATALOG.filter((e) => e.shelf === shelf.id).map((entry) => (
               <li key={entry.slug}>
-                <Link href={`/library/${entry.slug}`} className="lib-card">
+                <DocCard slug={entry.slug}>
                   <h3>
                     {entry.title[0]}{" "}
                     <span className="px">{entry.title[1]}</span>
@@ -51,7 +51,7 @@ export default function LibraryPage() {
                   <small>
                     {Math.max(1, Math.round(bySlug[entry.slug] / 220))} min read
                   </small>
-                </Link>
+                </DocCard>
               </li>
             ))}
           </ol>

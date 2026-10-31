@@ -1,6 +1,7 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Check, Copy } from "pixelarticons/react";
+import { Fragment, useEffect, useState } from "react";
 import { Morph } from "./morph";
 import {
   BENCHMARK,
@@ -13,11 +14,13 @@ import {
   groups,
   isEven,
   isThroughput,
+  receiptPrompt,
   rivals,
   rows,
   type Rival,
   type Row,
 } from "@/lib/kiban/bench";
+import { cue } from "@/lib/kiban/sound";
 
 // Every workload on one board: both engines in pixel numerals, p99 underneath,
 // and a segmented bar growing either side of 1×, log scale, one doubling per
@@ -34,8 +37,22 @@ function Receipt({
   rival: Rival;
   name: string;
 }) {
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const id = setTimeout(() => setCopied(false), 2600);
+    return () => clearTimeout(id);
+  }, [copied]);
   const theirs = row.rivals[rival];
   if (!theirs) return null;
+  const copy = () =>
+    navigator.clipboard.writeText(receiptPrompt(row, rival, name)).then(
+      () => {
+        setCopied(true);
+        cue("success", { emphasis: "subtle" });
+      },
+      () => {},
+    );
   const throughput = isThroughput(row);
   const peak = Math.max(...theirs.runs.flat());
   const show = (n: number) => (throughput ? fmtFull(n) : fmtUs(n));
@@ -87,9 +104,21 @@ function Receipt({
               </dd>
             </div>
           </dl>
-          <a className="read-link" href={`${RECEIPT.folder}/${row.source}`}>
-            Open the raw results
-          </a>
+          <button type="button" className="race-play rc-copy" onClick={copy}>
+            {copied ? (
+              <Check className="icon" aria-hidden="true" />
+            ) : (
+              <Copy className="icon" aria-hidden="true" />
+            )}
+            <Morph
+              value={
+                copied
+                  ? "copied, paste it into your ai"
+                  : "copy a prompt to explain this"
+              }
+              duration={420}
+            />
+          </button>
         </div>
       </td>
     </tr>
@@ -101,13 +130,11 @@ function Cells({
   rival,
   name,
   open,
-  onToggle,
 }: {
   row: Row;
   rival: Rival;
   name: string;
   open: boolean;
-  onToggle: () => void;
 }) {
   const theirs = row.rivals[rival];
   if (!theirs) return null;
@@ -154,7 +181,6 @@ function Cells({
             type="button"
             className="sb-verdict"
             aria-expanded={open}
-            onClick={onToggle}
             data-ahead={(!even && ahead) || undefined}
             title={`${theirs.trials} paired trials against ${name}, ratios ${theirs.min} to ${theirs.max}; above 1 favors kiban`}
           >
@@ -165,7 +191,9 @@ function Cells({
                   : `${fmtRatio(theirs.ratio)} ${ahead ? "faster" : "slower"}`
               }
             />
-            <span aria-hidden="true"> {open ? "▴" : "▾"}</span>
+            <span className="sb-more">
+              receipt <span aria-hidden="true">{open ? "▴" : "▾"}</span>
+            </span>
           </button>
         </div>
       </td>
@@ -229,7 +257,11 @@ export function Scoreboard() {
               .filter((row) => row.group === group && row.rivals[rival])
               .map((row) => (
                 <Fragment key={row.id}>
-                  <tr>
+                  <tr
+                    className="sb-row"
+                    data-open={opened === row.id || undefined}
+                    onClick={() => setOpened(opened === row.id ? null : row.id)}
+                  >
                     <th scope="row">
                       {row.label}
                       <small>{row.detail}</small>
@@ -239,9 +271,6 @@ export function Scoreboard() {
                       rival={rival}
                       name={name}
                       open={opened === row.id}
-                      onToggle={() =>
-                        setOpened(opened === row.id ? null : row.id)
-                      }
                     />
                   </tr>
                   {opened === row.id && (

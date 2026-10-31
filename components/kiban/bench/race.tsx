@@ -298,11 +298,13 @@ function Lane({
 export function Race() {
   const [id, setId] = useState<RaceId>("read-100m");
   const len = raceLength(id);
-  const [t, setT] = useState(len);
+  const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const auto = useRef(false); // nothing was pressed, so the finish stays silent
   // The loop advances this ref; state only mirrors it for rendering, so
   // side effects (the finish sound) never run inside a state updater.
-  const pos = useRef(len);
+  const pos = useRef(0);
   const frame = useRef(0);
 
   const moveTo = useCallback((s: number) => {
@@ -324,7 +326,7 @@ export function Race() {
       moveTo(next);
       if (next >= len) {
         setPlaying(false);
-        cue("success", { emphasis: "subtle" });
+        if (!auto.current) cue("success", { emphasis: "subtle" });
         return;
       }
       frame.current = requestAnimationFrame(tick);
@@ -333,14 +335,39 @@ export function Race() {
     return () => cancelAnimationFrame(frame.current);
   }, [playing, len, moveTo]);
 
+  // The first run plays itself when it comes into view. Reduced motion gets
+  // the finished race, with play still there.
+  useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    const watch = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        watch.disconnect();
+        if (matchMedia("(prefers-reduced-motion: reduce)").matches)
+          return moveTo(len);
+        auto.current = true;
+        setPlaying(true);
+      },
+      { threshold: 0.4 },
+    );
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, [len, moveTo]);
+
   const choose = (next: RaceId) => {
     stop();
     setId(next);
-    moveTo(raceLength(next));
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches)
+      return moveTo(raceLength(next));
+    auto.current = false;
+    moveTo(0);
+    setPlaying(true);
   };
   const toggle = () => {
     if (playing) return stop();
     if (pos.current >= len) moveTo(0);
+    auto.current = false;
     setPlaying(true);
   };
   const seek = (s: number) => {
@@ -354,7 +381,7 @@ export function Race() {
   const clock = useSampled(`t + ${t.toFixed(1)} s`, COUNT_MS);
 
   return (
-    <div className="tr">
+    <div ref={root} className="tr">
       <div className="tr-head">
         <div className="tr-picks" role="radiogroup" aria-label="Race">
           {races.map((r) => (

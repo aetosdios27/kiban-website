@@ -45,7 +45,7 @@ SOFTWARE.
 
 ## dithercn
 
-`lib/dither` comes from dithercn (https://dithercn.dev).
+`lib/dither`, `components/dithercn` and `.agents/skills/dithercn` come from dithercn (https://dithercn.dev).
 
 ```text
 MIT License
@@ -100,3 +100,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## Noto Serif CJK
+
+The 基 outline in `components/library/dither-field.tsx` comes from Noto Serif CJK JP Black, © Adobe, licensed under the SIL Open Font License 1.1 (https://openfontlicense.org).

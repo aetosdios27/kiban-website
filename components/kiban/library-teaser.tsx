@@ -1,3 +1,4 @@
+import { DocCard } from "@/components/library/doc-card";
 import Link from "next/link";
 import { ArrowRight } from "pixelarticons/react";
 import { CATALOG } from "@/lib/library/catalog";
@@ -26,12 +27,12 @@ export function LibraryTeaser() {
           const entry = CATALOG.find((e) => e.slug === slug)!;
           return (
             <li key={slug}>
-              <Link href={`/library/${slug}`} className="lib-card">
+              <DocCard slug={slug}>
                 <h3>
                   {entry.title[0]} <span className="px">{entry.title[1]}</span>
                 </h3>
                 <p>{entry.dek}</p>
-              </Link>
+              </DocCard>
             </li>
           );
         })}

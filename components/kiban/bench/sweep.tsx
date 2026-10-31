@@ -262,10 +262,12 @@ function Chart({
 }
 
 export function Sweep() {
-  const [pos, setPos] = useState(LAST);
+  const [pos, setPos] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const position = useRef(LAST);
-  const target = useRef(LAST);
+  const root = useRef<HTMLDivElement>(null);
+  const auto = useRef(false); // nothing was pressed, so the finish stays silent
+  const position = useRef(0);
+  const target = useRef(0);
   const frame = useRef(0);
   const stop = Math.round(pos);
 
@@ -300,7 +302,7 @@ export function Sweep() {
       setPos(position.current);
       if (position.current >= LAST) {
         setPlaying(false);
-        cue("success", { emphasis: "subtle" });
+        if (!auto.current) cue("success", { emphasis: "subtle" });
         return;
       }
       frame.current = requestAnimationFrame(tick);
@@ -308,6 +310,28 @@ export function Sweep() {
     frame.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame.current);
   }, [playing]);
+
+  // Plays itself when it comes into view. Reduced motion gets the full sweep,
+  // with play still there.
+  useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    const watch = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        watch.disconnect();
+        if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          position.current = target.current = LAST;
+          return setPos(LAST);
+        }
+        auto.current = true;
+        setPlaying(true);
+      },
+      { threshold: 0.4 },
+    );
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, []);
 
   const drag = (next: number) => {
     setPlaying(false);
@@ -328,16 +352,19 @@ export function Sweep() {
       position.current = 0;
       setPos(0);
     }
+    auto.current = false;
     setPlaying(true);
   };
 
   return (
-    <div className="tr">
+    <div ref={root} className="tr">
       <div className="tr-head">
         <p className="tr-sweep-title">writes per second, every one synced</p>
         <div className="tr-controls">
           <span className="tr-clock">
-            <Morph value={`${sweep.writers[stop]} writers`} />
+            <Morph
+              value={`${sweep.writers[stop]} writer${sweep.writers[stop] === 1 ? "" : "s"}`}
+            />
             <small>
               <Morph value={`${stop + 1} of ${LAST + 1}`} />
             </small>

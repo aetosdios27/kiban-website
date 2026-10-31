@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { BarChart } from "@/components/dithercn/bar-chart";
 
 /** Marks a sentence as it enters the reading zone, once. */
 export function Mark({ children }: { children: ReactNode }) {
@@ -27,7 +28,7 @@ export function Mark({ children }: { children: ReactNode }) {
   );
 }
 
-/** Bars that grow into place the first time they are seen. */
+/** One measured value per engine, with the lead engine drawn solid. */
 export function Bars({
   rows,
   unit,
@@ -37,43 +38,16 @@ export function Bars({
   unit: string;
   note: string;
 }) {
-  const ref = useRef<HTMLElement>(null);
-  const [on, setOn] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const watch = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        setOn(true);
-        watch.disconnect();
-      },
-      { threshold: 0.4 },
-    );
-    watch.observe(el);
-    return () => watch.disconnect();
-  }, []);
-  const top = Math.max(...rows.map((r) => r.value));
   return (
-    <figure ref={ref} className="es-bars" data-on={on || undefined}>
-      {rows.map((row, i) => (
-        <div
-          key={row.name}
-          className="es-bar"
-          data-lead={row.lead || undefined}
-        >
-          <span>{row.name}</span>
-          <i
-            style={{
-              transform: `scaleX(${on ? row.value / top : 0})`,
-              transitionDelay: `${i * 90}ms`,
-            }}
-          />
-          <b>
-            {row.value.toFixed(2)} {unit}
-          </b>
-        </div>
-      ))}
+    <figure className="es-bars">
+      <BarChart
+        data={rows}
+        x="name"
+        series={[{ label: unit, value: "value" }]}
+        highlight={rows.findIndex((row) => row.lead)}
+        format={(value) => `${value.toFixed(2)} ${unit}`}
+        height={260}
+      />
       <figcaption>{note}</figcaption>
     </figure>
   );

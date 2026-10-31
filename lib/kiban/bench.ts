@@ -4,7 +4,6 @@
 // ratios, stored rather than derived, and above 1 means kiban is faster.
 
 import raw from "./bench-data.json";
-import { ENGINE_REPO } from "./source";
 
 export type Rival = "rocksdb" | "sqlite" | "lmdb";
 export type Comparison = {
@@ -100,7 +99,6 @@ export const RECEIPT = {
     latency: "taskset -c 12-21 python3 validation/site-refresh/campaign.py",
     throughput: "python3 validation/site-refresh/group_commit.py",
   },
-  folder: `${ENGINE_REPO}/tree/main/validation/site-refresh`,
 };
 
 export const headlines = [
@@ -169,6 +167,44 @@ export const unmeasured = [
   { key: "many readers", clause: "one reader, one pinned core" },
   { key: "shared host", clause: "not an exclusive core" },
 ];
+
+/** Everything an assistant needs to explain one row, with no repo to read. */
+export function receiptPrompt(row: Row, rival: Rival, name: string) {
+  const theirs = row.rivals[rival];
+  if (!theirs) return "";
+  const throughput = isThroughput(row);
+  const show = (n: number) =>
+    throughput ? `${fmtFull(n)} writes/s` : fmtUs(n);
+  const headline = (side: Latency | Throughput) =>
+    "ops" in side ? side.ops : side.p50;
+  const trials = theirs.runs.map(([mine, other], i) => {
+    const ratio = throughput ? mine / other : other / mine;
+    return `r${i + 1}: kiban ${show(mine)}, ${name} ${show(other)}, ${ratio.toFixed(2)}×`;
+  });
+  return [
+    "Explain this storage engine benchmark to me in plain language. kiban is an embedded LSM-tree key-value store written in Rust.",
+    "",
+    `Workload: ${row.label}, ${row.detail} (${row.group}).`,
+    `Metric: ${throughput ? "writes per second, higher is better" : "median (p50) latency per operation, lower is better"}.`,
+    `Result: kiban ${show(headline(row.kiban))}, p99 ${fmtUs(row.kiban.p99)}. ${name} ${show(headline(theirs))}, p99 ${fmtUs(theirs.p99)}.`,
+    `Paired ratio: ${theirs.ratio}, ranging from ${theirs.min} to ${theirs.max} across ${theirs.trials} trials. Above 1 favors kiban. If the range crosses 1, the site calls the row even.`,
+    "",
+    "Trials:",
+    ...trials,
+    "",
+    `Setup: ${BENCHMARK.context}`,
+    `Commit: ${benchCommit}`,
+    `Host: ${RECEIPT.host}`,
+    `Rerun: ${throughput ? RECEIPT.rerun.throughput : RECEIPT.rerun.latency}`,
+    "",
+    "Where kiban loses elsewhere in this campaign:",
+    ...losses.map((loss) => `- ${loss.key}: ${loss.clause}`),
+    "Not measured:",
+    ...unmeasured.map((gap) => `- ${gap.key}: ${gap.clause}`),
+    "",
+    "Tell me what these numbers mean, how consistent the trials are, whether the gap would matter in practice, and what this result does not prove. Use only the numbers above, and say so when they cannot answer something.",
+  ].join("\n");
+}
 
 // ----------------------------------------------------------------- format --
 
